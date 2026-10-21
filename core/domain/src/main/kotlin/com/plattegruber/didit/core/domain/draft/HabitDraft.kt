@@ -37,8 +37,7 @@ enum class DraftError {
  * repository can rely on every invariant holding.
  */
 class ValidHabitDraft internal constructor(val name: String, val kind: KindDraft) {
-    override fun equals(other: Any?): Boolean =
-        other is ValidHabitDraft && name == other.name && kind == other.kind
+    override fun equals(other: Any?): Boolean = other is ValidHabitDraft && name == other.name && kind == other.kind
 
     override fun hashCode(): Int = name.hashCode() * 31 + kind.hashCode()
 
@@ -70,10 +69,9 @@ fun HabitDraft.validate(): DraftValidation {
         trimmedName.length > HabitLimits.MAX_NAME_LENGTH -> errors += DraftError.NameTooLong
     }
 
-    fun unit(raw: String): String =
-        raw.trim().also {
-            if (it.length > HabitLimits.MAX_UNIT_LENGTH) errors += DraftError.UnitTooLong
-        }
+    fun unit(raw: String): String = raw.trim().also {
+        if (it.length > HabitLimits.MAX_UNIT_LENGTH) errors += DraftError.UnitTooLong
+    }
 
     val normalizedKind =
         when (kind) {
@@ -111,35 +109,33 @@ fun HabitDraft.validate(): DraftValidation {
 }
 
 /** Whether this draft records the same kind of thing as [kind]; a habit's kind can never change. */
-fun KindDraft.sameKindAs(kind: HabitKind): Boolean =
-    when (this) {
-        KindDraft.Done -> kind is HabitKind.Done
-        is KindDraft.Amount -> kind is HabitKind.Amount
-        is KindDraft.Count -> kind is HabitKind.Count
-        is KindDraft.Choice -> kind is HabitKind.Choice
-    }
+fun KindDraft.sameKindAs(kind: HabitKind): Boolean = when (this) {
+    KindDraft.Done -> kind is HabitKind.Done
+    is KindDraft.Amount -> kind is HabitKind.Amount
+    is KindDraft.Count -> kind is HabitKind.Count
+    is KindDraft.Choice -> kind is HabitKind.Choice
+}
 
 /** The editable draft for an existing habit. Archived options are not offered for editing. */
-fun Habit.toDraft(): HabitDraft =
-    HabitDraft(
-        name = name,
-        kind =
-            when (val k = kind) {
-                HabitKind.Done -> {
-                    KindDraft.Done
-                }
+fun Habit.toDraft(): HabitDraft = HabitDraft(
+    name = name,
+    kind =
+        when (val k = kind) {
+            HabitKind.Done -> {
+                KindDraft.Done
+            }
 
-                is HabitKind.Amount -> {
-                    KindDraft.Amount(k.unit)
-                }
+            is HabitKind.Amount -> {
+                KindDraft.Amount(k.unit)
+            }
 
-                is HabitKind.Count -> {
-                    KindDraft.Count(k.unit)
-                }
+            is HabitKind.Count -> {
+                KindDraft.Count(k.unit)
+            }
 
-                is HabitKind.Choice -> {
-                    val options = k.activeOptions.map { OptionDraft(it.id, it.label, it.swatch) }
-                    KindDraft.Choice(k.unit, options)
-                }
-            },
-    )
+            is HabitKind.Choice -> {
+                val options = k.activeOptions.map { OptionDraft(it.id, it.label, it.swatch) }
+                KindDraft.Choice(k.unit, options)
+            }
+        },
+)

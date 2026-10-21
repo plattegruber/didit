@@ -23,9 +23,7 @@ abstract class DataModule {
     companion object {
         @Provides
         @Singleton
-        fun provideDatabase(
-            @ApplicationContext context: Context,
-        ): DiditDatabase =
+        fun provideDatabase(@ApplicationContext context: Context): DiditDatabase =
             Room.databaseBuilder(context, DiditDatabase::class.java, DiditDatabase.NAME).build()
     }
 }

@@ -71,23 +71,21 @@ class DiditWidget : GlanceAppWidget() {
 }
 
 private class IntentActions(private val context: Context, private val appWidgetId: Int) : WidgetActions {
-    override fun log(habit: Habit): Action =
-        if (habit.kind == HabitKind.Done) {
-            actionRunCallback<ToggleDoneAction>(actionParametersOf(ToggleDoneAction.HabitKey to habit.id.value))
-        } else {
-            actionStartActivity(QuickLogActivity.intent(context, habit.id))
-        }
+    override fun log(habit: Habit): Action = if (habit.kind == HabitKind.Done) {
+        actionRunCallback<ToggleDoneAction>(actionParametersOf(ToggleDoneAction.HabitKey to habit.id.value))
+    } else {
+        actionStartActivity(QuickLogActivity.intent(context, habit.id))
+    }
 
     override fun openApp(): Action = actionStartActivity(MainActivity.home(context))
 
     override fun openHistory(habit: Habit): Action = actionStartActivity(MainActivity.openHabit(context, habit.id))
 
-    override fun configure(): Action =
-        actionStartActivity(
-            Intent(context, WidgetConfigActivity::class.java)
-                .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
+    override fun configure(): Action = actionStartActivity(
+        Intent(context, WidgetConfigActivity::class.java)
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+    )
 }
 
 /** "One tap from the widget logs it": yes/no habits toggle today without opening anything. */

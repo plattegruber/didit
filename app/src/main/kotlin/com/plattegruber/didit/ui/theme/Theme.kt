@@ -46,24 +46,22 @@ data class DiditColors(
     val scrim: Color,
     val danger: Color,
 ) {
-    fun swatch(swatch: Swatch): Color =
-        when (swatch) {
-            Swatch.Ink -> ink
-            else -> Color(SwatchColors.argb(swatch))
-        }
+    fun swatch(swatch: Swatch): Color = when (swatch) {
+        Swatch.Ink -> ink
+        else -> Color(SwatchColors.argb(swatch))
+    }
 }
 
 /** Accent colours for choice options. Mid-tones, so they hold up on both light and dark grounds. */
 object SwatchColors {
-    fun argb(swatch: Swatch): Int =
-        when (swatch) {
-            Swatch.Ink -> error("Ink follows the theme; resolve it through DiditColors")
-            Swatch.Blue -> 0xFF7FA3DB.toInt()
-            Swatch.Amber -> 0xFFE8A54B.toInt()
-            Swatch.Coral -> 0xFFE3876B.toInt()
-            Swatch.Lilac -> 0xFFC99AE0.toInt()
-            Swatch.Sage -> 0xFF8FBF9A.toInt()
-        }
+    fun argb(swatch: Swatch): Int = when (swatch) {
+        Swatch.Ink -> error("Ink follows the theme; resolve it through DiditColors")
+        Swatch.Blue -> 0xFF7FA3DB.toInt()
+        Swatch.Amber -> 0xFFE8A54B.toInt()
+        Swatch.Coral -> 0xFFE3876B.toInt()
+        Swatch.Lilac -> 0xFFC99AE0.toInt()
+        Swatch.Sage -> 0xFF8FBF9A.toInt()
+    }
 }
 
 val DarkDiditColors =

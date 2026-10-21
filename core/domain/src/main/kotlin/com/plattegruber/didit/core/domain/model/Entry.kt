@@ -22,9 +22,8 @@ sealed interface EntryValue {
 }
 
 /** Whether this value is the kind of thing [kind] records. */
-fun EntryValue.isCompatibleWith(kind: HabitKind): Boolean =
-    when (this) {
-        EntryValue.Done -> kind is HabitKind.Done
-        is EntryValue.Amount -> kind is HabitKind.Amount || kind is HabitKind.Count
-        is EntryValue.Choice -> kind is HabitKind.Choice && kind.option(optionId) != null
-    }
+fun EntryValue.isCompatibleWith(kind: HabitKind): Boolean = when (this) {
+    EntryValue.Done -> kind is HabitKind.Done
+    is EntryValue.Amount -> kind is HabitKind.Amount || kind is HabitKind.Count
+    is EntryValue.Choice -> kind is HabitKind.Choice && kind.option(optionId) != null
+}

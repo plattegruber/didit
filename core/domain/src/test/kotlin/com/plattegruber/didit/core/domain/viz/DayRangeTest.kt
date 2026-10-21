@@ -3,10 +3,10 @@ package com.plattegruber.didit.core.domain.viz
 import com.google.common.truth.Truth.assertThat
 import com.plattegruber.didit.core.domain.TODAY
 import com.plattegruber.didit.core.domain.daysAgo
-import org.junit.Test
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import org.junit.Test
 
 class DayRangeTest {
     @Test

@@ -105,23 +105,22 @@ data class GlyphMetrics(
     /** Space kept clear above the tallest stack. */
     val top: Float,
 ) {
-    fun scaled(unit: Float): GlyphMetrics =
-        GlyphMetrics(
-            dot * unit,
-            dotGap * unit,
-            dotBottom * unit,
-            barWidth * unit,
-            barMin * unit,
-            barMax * unit,
-            barBottom * unit,
-            barEmpty * unit,
-            pip * unit,
-            pipGap * unit,
-            pipBottom * unit,
-            check * unit,
-            checkStroke * unit,
-            top * unit,
-        )
+    fun scaled(unit: Float): GlyphMetrics = GlyphMetrics(
+        dot * unit,
+        dotGap * unit,
+        dotBottom * unit,
+        barWidth * unit,
+        barMin * unit,
+        barMax * unit,
+        barBottom * unit,
+        barEmpty * unit,
+        pip * unit,
+        pipGap * unit,
+        pipBottom * unit,
+        check * unit,
+        checkStroke * unit,
+        top * unit,
+    )
 
     companion object {
         val Rows =

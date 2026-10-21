@@ -35,12 +35,11 @@ enum class Tone(val alpha: Float) {
 class GlyphPalette private constructor(private val ink: Int?, private val drawAccents: Boolean) {
     fun tone(tone: Tone): Int? = ink?.let { ColorUtils.setAlphaComponent(it, (tone.alpha * MAX_ALPHA).toInt()) }
 
-    fun swatch(swatch: Swatch): Int? =
-        when {
-            swatch == Swatch.Ink -> ink
-            drawAccents -> SwatchColors.argb(swatch)
-            else -> null
-        }
+    fun swatch(swatch: Swatch): Int? = when {
+        swatch == Swatch.Ink -> ink
+        drawAccents -> SwatchColors.argb(swatch)
+        else -> null
+    }
 
     companion object {
         private const val MAX_ALPHA = 255

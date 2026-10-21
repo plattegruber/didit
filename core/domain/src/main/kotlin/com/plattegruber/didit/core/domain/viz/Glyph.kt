@@ -32,27 +32,26 @@ fun Habit.glyphs(days: Map<LocalDate, DayValue>, dates: List<LocalDate>): List<G
     return dates.map { glyph(days[it], reference) }
 }
 
-private fun Habit.glyph(value: DayValue?, amountReference: Double): Glyph =
-    when (val k = kind) {
-        HabitKind.Done -> {
-            Glyph.Check(done = value == DayValue.Done)
-        }
-
-        is HabitKind.Amount -> {
-            val total = (value as? DayValue.Amount)?.total ?: 0.0
-            Glyph.Bar(if (total > 0.0) (total / amountReference).toFloat().coerceAtMost(1f) else 0f)
-        }
-
-        is HabitKind.Count -> {
-            Glyph.Pips(((value as? DayValue.Amount)?.total ?: 0.0).roundToInt().coerceAtLeast(0))
-        }
-
-        is HabitKind.Choice -> {
-            Glyph.Dots(
-                (value as? DayValue.Choices)?.picks.orEmpty().mapNotNull { k.option(it)?.swatch },
-            )
-        }
+private fun Habit.glyph(value: DayValue?, amountReference: Double): Glyph = when (val k = kind) {
+    HabitKind.Done -> {
+        Glyph.Check(done = value == DayValue.Done)
     }
+
+    is HabitKind.Amount -> {
+        val total = (value as? DayValue.Amount)?.total ?: 0.0
+        Glyph.Bar(if (total > 0.0) (total / amountReference).toFloat().coerceAtMost(1f) else 0f)
+    }
+
+    is HabitKind.Count -> {
+        Glyph.Pips(((value as? DayValue.Amount)?.total ?: 0.0).roundToInt().coerceAtLeast(0))
+    }
+
+    is HabitKind.Choice -> {
+        Glyph.Dots(
+            (value as? DayValue.Choices)?.picks.orEmpty().mapNotNull { k.option(it)?.swatch },
+        )
+    }
+}
 
 /** Fraction of days allowed to exceed the automatic scale and draw at full height. */
 private const val OUTLIER_FRACTION = 0.1

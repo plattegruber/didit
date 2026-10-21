@@ -9,8 +9,8 @@ import com.plattegruber.didit.core.domain.daysAgo
 import com.plattegruber.didit.core.domain.entry
 import com.plattegruber.didit.core.domain.mealsHabit
 import com.plattegruber.didit.core.domain.pagesHabit
-import org.junit.Test
 import java.time.Instant
+import org.junit.Test
 
 class SummarizeTest {
     @Test

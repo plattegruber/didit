@@ -15,8 +15,8 @@ import com.plattegruber.didit.core.domain.model.HabitKind
 import com.plattegruber.didit.core.domain.model.OptionId
 import com.plattegruber.didit.core.domain.model.Swatch
 import com.plattegruber.didit.core.domain.pagesHabit
-import org.junit.Test
 import java.time.LocalDate
+import org.junit.Test
 
 class HabitStatsTest {
     private fun done(vararg daysAgo: Long): Map<LocalDate, DayValue> =

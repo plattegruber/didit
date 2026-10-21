@@ -7,11 +7,11 @@ import com.google.common.truth.Truth.assertThat
 import com.plattegruber.didit.core.domain.model.Swatch
 import com.plattegruber.didit.core.domain.viz.WindowSummary
 import com.plattegruber.didit.testing.DesignSamples
+import java.time.LocalDate
+import java.util.Locale
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-import java.time.LocalDate
-import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "en-rUS")

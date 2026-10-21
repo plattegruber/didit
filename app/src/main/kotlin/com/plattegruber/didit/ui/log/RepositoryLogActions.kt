@@ -4,9 +4,9 @@ import com.plattegruber.didit.core.domain.model.EntryId
 import com.plattegruber.didit.core.domain.model.HabitId
 import com.plattegruber.didit.core.domain.model.OptionId
 import com.plattegruber.didit.core.domain.repository.HabitRepository
+import java.time.LocalDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 /** [LogActions] carried out against the repository, in the caller's [scope]. */
 class RepositoryLogActions(private val repository: HabitRepository, private val scope: CoroutineScope) : LogActions {

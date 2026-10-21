@@ -35,10 +35,9 @@ class LayerRenderer(private val context: Context) {
         val width = (widthDp * density).toInt().coerceAtLeast(1)
         val height = (heightDp * density).toInt().coerceAtLeast(1)
 
-        fun layer(palette: GlyphPalette): Bitmap =
-            createBitmap(width, height).also { bitmap ->
-                GlyphPainter(palette, density, typeface).draw(Canvas(bitmap), width.toFloat(), height.toFloat())
-            }
+        fun layer(palette: GlyphPalette): Bitmap = createBitmap(width, height).also { bitmap ->
+            GlyphPainter(palette, density, typeface).draw(Canvas(bitmap), width.toFloat(), height.toFloat())
+        }
 
         return InkLayers(
             ink = layer(GlyphPalette.InkMask),

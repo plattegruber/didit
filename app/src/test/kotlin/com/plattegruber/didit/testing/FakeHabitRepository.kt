@@ -11,13 +11,13 @@ import com.plattegruber.didit.core.domain.model.HabitId
 import com.plattegruber.didit.core.domain.model.HabitKind
 import com.plattegruber.didit.core.domain.model.OptionId
 import com.plattegruber.didit.core.domain.repository.HabitRepository
+import java.time.Instant
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import java.time.Instant
-import java.time.LocalDate
 
 /** An in-memory [HabitRepository] for view model tests. The real one is tested against Room. */
 class FakeHabitRepository(private val now: Instant = Instant.EPOCH) : HabitRepository {
@@ -110,28 +110,27 @@ class FakeHabitRepository(private val now: Instant = Instant.EPOCH) : HabitRepos
 
     private fun HabitKind.optionsOrEmpty(): List<ChoiceOption> = (this as? HabitKind.Choice)?.options.orEmpty()
 
-    private fun KindDraft.toKind(existing: List<ChoiceOption>): HabitKind =
-        when (this) {
-            KindDraft.Done -> {
-                HabitKind.Done
-            }
-
-            is KindDraft.Amount -> {
-                HabitKind.Amount(unit)
-            }
-
-            is KindDraft.Count -> {
-                HabitKind.Count(unit)
-            }
-
-            is KindDraft.Choice -> {
-                HabitKind.Choice(
-                    unit,
-                    options.map { draft ->
-                        existing.firstOrNull { it.id == draft.id }?.copy(label = draft.label, swatch = draft.swatch)
-                            ?: ChoiceOption(OptionId(nextId++), draft.label, draft.swatch)
-                    },
-                )
-            }
+    private fun KindDraft.toKind(existing: List<ChoiceOption>): HabitKind = when (this) {
+        KindDraft.Done -> {
+            HabitKind.Done
         }
+
+        is KindDraft.Amount -> {
+            HabitKind.Amount(unit)
+        }
+
+        is KindDraft.Count -> {
+            HabitKind.Count(unit)
+        }
+
+        is KindDraft.Choice -> {
+            HabitKind.Choice(
+                unit,
+                options.map { draft ->
+                    existing.firstOrNull { it.id == draft.id }?.copy(label = draft.label, swatch = draft.swatch)
+                        ?: ChoiceOption(OptionId(nextId++), draft.label, draft.swatch)
+                },
+            )
+        }
+    }
 }

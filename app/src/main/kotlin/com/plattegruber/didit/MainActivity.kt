@@ -43,14 +43,12 @@ class MainActivity : ComponentActivity() {
         private const val EXTRA_HABIT_ID = "com.plattegruber.didit.extra.HABIT_ID"
         private const val NO_HABIT = -1L
 
-        fun home(context: Context): Intent =
-            Intent(context, MainActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        fun home(context: Context): Intent = Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
         /** Opens the app on [habitId]'s history. */
-        fun openHabit(context: Context, habitId: HabitId): Intent =
-            Intent(context, MainActivity::class.java)
-                .putExtra(EXTRA_HABIT_ID, habitId.value)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        fun openHabit(context: Context, habitId: HabitId): Intent = Intent(context, MainActivity::class.java)
+            .putExtra(EXTRA_HABIT_ID, habitId.value)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
     }
 }

@@ -11,41 +11,41 @@ import androidx.work.WorkerParameters
 import com.plattegruber.didit.core.domain.repository.HabitRepository
 import com.plattegruber.didit.di.ApplicationScope
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.launch
 
 /** Keeps placed widgets in step with the data, wherever the change came from. */
 @Singleton
 class WidgetSync
-    @Inject
-    constructor(
-        @param:ApplicationContext private val context: Context,
-        private val repository: HabitRepository,
-        @param:ApplicationScope private val scope: CoroutineScope,
-    ) {
-        @OptIn(FlowPreview::class)
-        fun start() {
-            scope.launch {
-                // Bursts of edits (stepping a total up five times) collapse into one redraw.
-                repository.observeChanges().debounce(DEBOUNCE_MILLIS).collect { DiditWidget().updateAll(context) }
-            }
-            scope.launch {
-                if (hasWidgets(context)) MidnightRefreshWorker.schedule(context)
-            }
+@Inject
+constructor(
+    @param:ApplicationContext private val context: Context,
+    private val repository: HabitRepository,
+    @param:ApplicationScope private val scope: CoroutineScope,
+) {
+    @OptIn(FlowPreview::class)
+    fun start() {
+        scope.launch {
+            // Bursts of edits (stepping a total up five times) collapse into one redraw.
+            repository.observeChanges().debounce(DEBOUNCE_MILLIS).collect { DiditWidget().updateAll(context) }
         }
-
-        private companion object {
-            const val DEBOUNCE_MILLIS = 250L
+        scope.launch {
+            if (hasWidgets(context)) MidnightRefreshWorker.schedule(context)
         }
     }
+
+    private companion object {
+        const val DEBOUNCE_MILLIS = 250L
+    }
+}
 
 internal suspend fun hasWidgets(context: Context): Boolean =
     GlanceAppWidgetManager(context).getGlanceIds(DiditWidget::class.java).isNotEmpty()

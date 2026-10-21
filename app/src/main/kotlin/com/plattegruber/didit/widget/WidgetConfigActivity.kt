@@ -55,57 +55,57 @@ import com.plattegruber.didit.ui.theme.DiditTheme
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
 class WidgetConfigViewModel
-    @Inject
-    constructor(
-        savedState: SavedStateHandle,
-        repository: HabitRepository,
-        @param:ApplicationContext private val context: Context,
-    ) : ViewModel() {
-        val appWidgetId: Int = savedState[AppWidgetManager.EXTRA_APPWIDGET_ID] ?: AppWidgetManager.INVALID_APPWIDGET_ID
+@Inject
+constructor(
+    savedState: SavedStateHandle,
+    repository: HabitRepository,
+    @param:ApplicationContext private val context: Context,
+) : ViewModel() {
+    val appWidgetId: Int = savedState[AppWidgetManager.EXTRA_APPWIDGET_ID] ?: AppWidgetManager.INVALID_APPWIDGET_ID
 
-        val habits: StateFlow<List<Habit>?> =
-            repository
-                .observeHabits()
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+    val habits: StateFlow<List<Habit>?> =
+        repository
+            .observeHabits()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
-        var config by mutableStateOf(WidgetConfig())
-            private set
+    var config by mutableStateOf(WidgetConfig())
+        private set
 
-        init {
-            viewModelScope.launch {
-                val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
-                config = WidgetConfig.from(getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId))
-            }
-        }
-
-        fun update(change: (WidgetConfig) -> WidgetConfig) {
-            config = change(config)
-        }
-
-        /** Saves the configuration and redraws the widget; [onSaved] runs once both are done. */
-        fun save(onSaved: () -> Unit) {
-            viewModelScope.launch {
-                val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
-                updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { preferences: Preferences ->
-                    preferences.toMutablePreferences().apply { config.writeTo(this) }
-                }
-                DiditWidget().update(context, glanceId)
-                onSaved()
-            }
-        }
-
-        private companion object {
-            const val STOP_TIMEOUT_MILLIS = 5_000L
+    init {
+        viewModelScope.launch {
+            val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
+            config = WidgetConfig.from(getAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId))
         }
     }
+
+    fun update(change: (WidgetConfig) -> WidgetConfig) {
+        config = change(config)
+    }
+
+    /** Saves the configuration and redraws the widget; [onSaved] runs once both are done. */
+    fun save(onSaved: () -> Unit) {
+        viewModelScope.launch {
+            val glanceId = GlanceAppWidgetManager(context).getGlanceIdBy(appWidgetId)
+            updateAppWidgetState(context, PreferencesGlanceStateDefinition, glanceId) { preferences: Preferences ->
+                preferences.toMutablePreferences().apply { config.writeTo(this) }
+            }
+            DiditWidget().update(context, glanceId)
+            onSaved()
+        }
+    }
+
+    private companion object {
+        const val STOP_TIMEOUT_MILLIS = 5_000L
+    }
+}
 
 /** Chooses what a widget shows and how it sits on the home screen. */
 @AndroidEntryPoint

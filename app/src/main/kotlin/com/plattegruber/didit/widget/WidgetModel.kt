@@ -4,9 +4,9 @@ import com.plattegruber.didit.core.domain.model.Entry
 import com.plattegruber.didit.core.domain.model.summarize
 import com.plattegruber.didit.core.domain.repository.HabitRepository
 import com.plattegruber.didit.ui.viz.HabitHistory
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import java.time.LocalDate
 
 /** Everything a widget needs to draw itself. */
 sealed interface WidgetModel {
@@ -26,11 +26,7 @@ sealed interface WidgetModel {
         /** The most history any widget layout can show: six weeks of calendar. */
         const val MAX_DAYS = 42L
 
-        fun observe(
-            repository: HabitRepository,
-            target: WidgetConfig.Target,
-            today: LocalDate,
-        ): Flow<WidgetModel> {
+        fun observe(repository: HabitRepository, target: WidgetConfig.Target, today: LocalDate): Flow<WidgetModel> {
             val entries = repository.observeEntries(today.minusDays(MAX_DAYS - 1), today)
             return when (target) {
                 WidgetConfig.Target.AllHabits -> {

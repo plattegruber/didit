@@ -39,11 +39,10 @@ data class WidgetConfig(val target: Target = Target.AllHabits, val card: Boolean
         private val CARD = booleanPreferencesKey("card")
         private val INK = stringPreferencesKey("ink")
 
-        fun from(preferences: Preferences): WidgetConfig =
-            WidgetConfig(
-                target = preferences[HABIT_ID]?.let { Target.OneHabit(HabitId(it)) } ?: Target.AllHabits,
-                card = preferences[CARD] ?: false,
-                ink = Ink.entries.firstOrNull { it.key == preferences[INK] } ?: Ink.Auto,
-            )
+        fun from(preferences: Preferences): WidgetConfig = WidgetConfig(
+            target = preferences[HABIT_ID]?.let { Target.OneHabit(HabitId(it)) } ?: Target.AllHabits,
+            card = preferences[CARD] ?: false,
+            ink = Ink.entries.firstOrNull { it.key == preferences[INK] } ?: Ink.Auto,
+        )
     }
 }

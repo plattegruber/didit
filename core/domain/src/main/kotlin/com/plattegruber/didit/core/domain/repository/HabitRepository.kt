@@ -6,8 +6,8 @@ import com.plattegruber.didit.core.domain.model.EntryId
 import com.plattegruber.didit.core.domain.model.Habit
 import com.plattegruber.didit.core.domain.model.HabitId
 import com.plattegruber.didit.core.domain.model.OptionId
-import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
+import kotlinx.coroutines.flow.Flow
 
 interface HabitRepository {
     /** All habits, in the order the user arranged them. */

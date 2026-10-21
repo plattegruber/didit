@@ -14,12 +14,12 @@ import com.plattegruber.didit.ui.viz.GlyphPainter
 import com.plattegruber.didit.ui.viz.GlyphPalette
 import com.plattegruber.didit.ui.viz.HabitScenes
 import com.plattegruber.didit.ui.viz.labelTypeface
+import java.time.DayOfWeek
+import java.util.Locale
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.time.DayOfWeek
-import java.util.Locale
 
 /** The painter on its own, drawing each scene from the design's data at 3x. */
 @RunWith(AndroidJUnit4::class)

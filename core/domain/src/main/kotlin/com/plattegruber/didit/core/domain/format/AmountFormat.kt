@@ -9,14 +9,13 @@ import java.util.Locale
 object AmountFormat {
     private const val MAX_FRACTION_DIGITS = 2
 
-    fun format(amount: Double, locale: Locale = Locale.getDefault()): String =
-        NumberFormat
-            .getNumberInstance(locale)
-            .apply {
-                maximumFractionDigits = MAX_FRACTION_DIGITS
-                minimumFractionDigits = 0
-                roundingMode = RoundingMode.HALF_UP
-            }.format(amount)
+    fun format(amount: Double, locale: Locale = Locale.getDefault()): String = NumberFormat
+        .getNumberInstance(locale)
+        .apply {
+            maximumFractionDigits = MAX_FRACTION_DIGITS
+            minimumFractionDigits = 0
+            roundingMode = RoundingMode.HALF_UP
+        }.format(amount)
 
     /** "12 pages", or just "12" for a unitless habit. */
     fun withUnit(amount: Double, unit: String, locale: Locale = Locale.getDefault()): String {

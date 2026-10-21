@@ -84,54 +84,49 @@ class WidgetScreenshotTest {
     }
 
     @Test
-    fun allHabits() =
-        runTest {
-            render(
-                WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
-                WidgetConfig(ink = WidgetConfig.Ink.Light),
-                DpSize(366.dp, 290.dp),
-            ).captureRoboImage()
-        }
+    fun allHabits() = runTest {
+        render(
+            WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
+            WidgetConfig(ink = WidgetConfig.Ink.Light),
+            DpSize(366.dp, 290.dp),
+        ).captureRoboImage()
+    }
 
     @Test
-    fun allHabitsCard() =
-        runTest {
-            render(
-                WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
-                WidgetConfig(card = true, ink = WidgetConfig.Ink.Light),
-                DpSize(366.dp, 290.dp),
-            ).captureRoboImage()
-        }
+    fun allHabitsCard() = runTest {
+        render(
+            WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
+            WidgetConfig(card = true, ink = WidgetConfig.Ink.Light),
+            DpSize(366.dp, 290.dp),
+        ).captureRoboImage()
+    }
 
     @Test
-    fun oneHabitStrip() =
-        runTest {
-            render(
-                WidgetModel.OneHabit(DesignSamples.pagesHistory, DesignSamples.TODAY),
-                WidgetConfig(ink = WidgetConfig.Ink.Light),
-                DpSize(350.dp, 112.dp),
-            ).captureRoboImage()
-        }
+    fun oneHabitStrip() = runTest {
+        render(
+            WidgetModel.OneHabit(DesignSamples.pagesHistory, DesignSamples.TODAY),
+            WidgetConfig(ink = WidgetConfig.Ink.Light),
+            DpSize(350.dp, 112.dp),
+        ).captureRoboImage()
+    }
 
     @Test
-    fun oneHabitCalendar() =
-        runTest {
-            render(
-                WidgetModel.OneHabit(DesignSamples.mealsHistory, DesignSamples.TODAY),
-                WidgetConfig(ink = WidgetConfig.Ink.Light),
-                DpSize(178.dp, 178.dp),
-            ).captureRoboImage()
-        }
+    fun oneHabitCalendar() = runTest {
+        render(
+            WidgetModel.OneHabit(DesignSamples.mealsHistory, DesignSamples.TODAY),
+            WidgetConfig(ink = WidgetConfig.Ink.Light),
+            DpSize(178.dp, 178.dp),
+        ).captureRoboImage()
+    }
 
     @Test
-    fun habitMissing() =
-        runTest {
-            render(
-                WidgetModel.HabitMissing,
-                WidgetConfig(ink = WidgetConfig.Ink.Light),
-                DpSize(300.dp, 80.dp),
-            ).captureRoboImage()
-        }
+    fun habitMissing() = runTest {
+        render(
+            WidgetModel.HabitMissing,
+            WidgetConfig(ink = WidgetConfig.Ink.Light),
+            DpSize(300.dp, 80.dp),
+        ).captureRoboImage()
+    }
 
     private companion object {
         /** The design's ground, standing in for a dark wallpaper. */

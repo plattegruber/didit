@@ -43,10 +43,9 @@ fun HabitKind.summarize(entries: Iterable<Entry>): Map<LocalDate, DayValue> {
 }
 
 /** Whether anything that counts was logged, for streaks and "active day" tallies. */
-fun isHit(value: DayValue?): Boolean =
-    when (value) {
-        null -> false
-        DayValue.Done -> true
-        is DayValue.Amount -> value.total > 0.0
-        is DayValue.Choices -> value.picks.isNotEmpty()
-    }
+fun isHit(value: DayValue?): Boolean = when (value) {
+    null -> false
+    DayValue.Done -> true
+    is DayValue.Amount -> value.total > 0.0
+    is DayValue.Choices -> value.picks.isNotEmpty()
+}

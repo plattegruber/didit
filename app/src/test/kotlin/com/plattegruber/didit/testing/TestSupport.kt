@@ -1,6 +1,10 @@
 package com.plattegruber.didit.testing
 
 import com.plattegruber.didit.core.domain.time.AppClock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
@@ -9,10 +13,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZoneOffset
 
 /** Runs `viewModelScope` work on a test dispatcher. */
 @OptIn(ExperimentalCoroutinesApi::class)

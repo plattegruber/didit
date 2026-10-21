@@ -25,11 +25,11 @@ import com.plattegruber.didit.ui.log.RepositoryLogActions
 import com.plattegruber.didit.ui.theme.DiditTheme
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
 
 sealed interface QuickLogState {
     data object Loading : QuickLogState
@@ -41,35 +41,35 @@ sealed interface QuickLogState {
 
 @HiltViewModel
 class QuickLogViewModel
-    @Inject
-    constructor(
-        savedState: SavedStateHandle,
-        repository: HabitRepository,
-        clock: AppClock,
-    ) : ViewModel() {
-        val habitId = HabitId(savedState.get<Long>(QuickLogActivity.EXTRA_HABIT_ID) ?: -1L)
+@Inject
+constructor(
+    savedState: SavedStateHandle,
+    repository: HabitRepository,
+    clock: AppClock,
+) : ViewModel() {
+    val habitId = HabitId(savedState.get<Long>(QuickLogActivity.EXTRA_HABIT_ID) ?: -1L)
 
-        /** Fixed when the sheet opens: a sheet left open across midnight keeps logging the day it showed. */
-        private val today = clock.today()
+    /** Fixed when the sheet opens: a sheet left open across midnight keeps logging the day it showed. */
+    private val today = clock.today()
 
-        val logActions: LogActions = RepositoryLogActions(repository, viewModelScope)
+    val logActions: LogActions = RepositoryLogActions(repository, viewModelScope)
 
-        val state: StateFlow<QuickLogState> =
-            combine(
-                repository.observeHabit(habitId),
-                repository.observeEntries(today, today),
-            ) { habit, entries ->
-                if (habit == null) {
-                    QuickLogState.Missing
-                } else {
-                    QuickLogState.Ready(LogTarget(habit, today, entries.filter { it.habitId == habitId }))
-                }
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), QuickLogState.Loading)
+    val state: StateFlow<QuickLogState> =
+        combine(
+            repository.observeHabit(habitId),
+            repository.observeEntries(today, today),
+        ) { habit, entries ->
+            if (habit == null) {
+                QuickLogState.Missing
+            } else {
+                QuickLogState.Ready(LogTarget(habit, today, entries.filter { it.habitId == habitId }))
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), QuickLogState.Loading)
 
-        private companion object {
-            const val STOP_TIMEOUT_MILLIS = 5_000L
-        }
+    private companion object {
+        const val STOP_TIMEOUT_MILLIS = 5_000L
     }
+}
 
 /** The log sheet on its own, over whatever is behind it: what a tap on the widget opens. */
 @AndroidEntryPoint
@@ -109,10 +109,9 @@ class QuickLogActivity : ComponentActivity() {
     companion object {
         const val EXTRA_HABIT_ID = "com.plattegruber.didit.extra.QUICK_LOG_HABIT_ID"
 
-        fun intent(context: Context, habitId: HabitId): Intent =
-            Intent(context, QuickLogActivity::class.java)
-                .putExtra(EXTRA_HABIT_ID, habitId.value)
-                // Always a fresh sheet for the habit tapped, never one left over from an earlier tap.
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        fun intent(context: Context, habitId: HabitId): Intent = Intent(context, QuickLogActivity::class.java)
+            .putExtra(EXTRA_HABIT_ID, habitId.value)
+            // Always a fresh sheet for the habit tapped, never one left over from an earlier tap.
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
     }
 }

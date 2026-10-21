@@ -20,30 +20,29 @@ object DayText {
         summary: WindowSummary,
         unit: String,
         locale: Locale = Locale.getDefault(),
-    ): SummaryText =
-        when (summary) {
-            is WindowSummary.Picks -> {
-                SummaryText(AmountFormat.format(summary.total.toDouble(), locale), unit)
-            }
-
-            is WindowSummary.Total -> {
-                SummaryText(AmountFormat.format(summary.total, locale), unit)
-            }
-
-            is WindowSummary.PerDay -> {
-                SummaryText(
-                    String.format(locale, "%.1f", summary.average),
-                    resources.getString(R.string.summary_per_day),
-                )
-            }
-
-            is WindowSummary.DaysDone -> {
-                SummaryText(
-                    AmountFormat.format(summary.done.toDouble(), locale),
-                    resources.getString(R.string.summary_of_days, summary.of),
-                )
-            }
+    ): SummaryText = when (summary) {
+        is WindowSummary.Picks -> {
+            SummaryText(AmountFormat.format(summary.total.toDouble(), locale), unit)
         }
+
+        is WindowSummary.Total -> {
+            SummaryText(AmountFormat.format(summary.total, locale), unit)
+        }
+
+        is WindowSummary.PerDay -> {
+            SummaryText(
+                String.format(locale, "%.1f", summary.average),
+                resources.getString(R.string.summary_per_day),
+            )
+        }
+
+        is WindowSummary.DaysDone -> {
+            SummaryText(
+                AmountFormat.format(summary.done.toDouble(), locale),
+                resources.getString(R.string.summary_of_days, summary.of),
+            )
+        }
+    }
 
     /** "Today · Tue, Oct 20", "Yesterday · Mon, Oct 19" or just "Sun, Oct 18". */
     fun sheetDate(
@@ -73,58 +72,57 @@ object DayText {
     fun month(date: LocalDate, locale: Locale = Locale.getDefault()): String =
         date.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
 
-    fun draftError(resources: Resources, error: DraftError): String =
-        when (error) {
-            DraftError.NameBlank -> {
-                resources.getString(R.string.error_name_blank)
-            }
-
-            DraftError.NameTooLong -> {
-                resources.getQuantityString(
-                    R.plurals.error_name_too_long,
-                    HabitLimits.MAX_NAME_LENGTH,
-                    HabitLimits.MAX_NAME_LENGTH,
-                )
-            }
-
-            DraftError.UnitTooLong -> {
-                resources.getQuantityString(
-                    R.plurals.error_unit_too_long,
-                    HabitLimits.MAX_UNIT_LENGTH,
-                    HabitLimits.MAX_UNIT_LENGTH,
-                )
-            }
-
-            DraftError.TooFewOptions -> {
-                resources.getQuantityString(
-                    R.plurals.error_too_few_options,
-                    HabitLimits.MIN_OPTIONS,
-                    HabitLimits.MIN_OPTIONS,
-                )
-            }
-
-            DraftError.TooManyOptions -> {
-                resources.getQuantityString(
-                    R.plurals.error_too_many_options,
-                    HabitLimits.MAX_OPTIONS,
-                    HabitLimits.MAX_OPTIONS,
-                )
-            }
-
-            DraftError.OptionLabelBlank -> {
-                resources.getString(R.string.error_option_blank)
-            }
-
-            DraftError.OptionLabelTooLong -> {
-                resources.getQuantityString(
-                    R.plurals.error_option_too_long,
-                    HabitLimits.MAX_OPTION_LABEL_LENGTH,
-                    HabitLimits.MAX_OPTION_LABEL_LENGTH,
-                )
-            }
-
-            DraftError.DuplicateOptionLabels -> {
-                resources.getString(R.string.error_option_duplicate)
-            }
+    fun draftError(resources: Resources, error: DraftError): String = when (error) {
+        DraftError.NameBlank -> {
+            resources.getString(R.string.error_name_blank)
         }
+
+        DraftError.NameTooLong -> {
+            resources.getQuantityString(
+                R.plurals.error_name_too_long,
+                HabitLimits.MAX_NAME_LENGTH,
+                HabitLimits.MAX_NAME_LENGTH,
+            )
+        }
+
+        DraftError.UnitTooLong -> {
+            resources.getQuantityString(
+                R.plurals.error_unit_too_long,
+                HabitLimits.MAX_UNIT_LENGTH,
+                HabitLimits.MAX_UNIT_LENGTH,
+            )
+        }
+
+        DraftError.TooFewOptions -> {
+            resources.getQuantityString(
+                R.plurals.error_too_few_options,
+                HabitLimits.MIN_OPTIONS,
+                HabitLimits.MIN_OPTIONS,
+            )
+        }
+
+        DraftError.TooManyOptions -> {
+            resources.getQuantityString(
+                R.plurals.error_too_many_options,
+                HabitLimits.MAX_OPTIONS,
+                HabitLimits.MAX_OPTIONS,
+            )
+        }
+
+        DraftError.OptionLabelBlank -> {
+            resources.getString(R.string.error_option_blank)
+        }
+
+        DraftError.OptionLabelTooLong -> {
+            resources.getQuantityString(
+                R.plurals.error_option_too_long,
+                HabitLimits.MAX_OPTION_LABEL_LENGTH,
+                HabitLimits.MAX_OPTION_LABEL_LENGTH,
+            )
+        }
+
+        DraftError.DuplicateOptionLabels -> {
+            resources.getString(R.string.error_option_duplicate)
+        }
+    }
 }

@@ -20,6 +20,7 @@ import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
+import androidx.glance.color.ColorProvider as DayNightColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -57,7 +58,6 @@ import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.Locale
 import kotlin.math.floor
-import androidx.glance.color.ColorProvider as DayNightColorProvider
 
 /** Where taps on the widget go. Kept apart from the layout so the layout can be tested alone. */
 interface WidgetActions {
@@ -138,23 +138,22 @@ class WidgetColors(config: WidgetConfig) {
     fun swatch(swatch: Swatch): ColorProvider =
         if (swatch == Swatch.Ink) ink else ColorProvider(Color(SwatchColors.argb(swatch)))
 
-    private fun provider(ink: WidgetConfig.Ink, alpha: Float) =
-        when (ink) {
-            WidgetConfig.Ink.Auto -> {
-                DayNightColorProvider(
-                    day = deepInk.copy(alpha = alpha),
-                    night = paleInk.copy(alpha = alpha),
-                )
-            }
-
-            WidgetConfig.Ink.Light -> {
-                ColorProvider(paleInk.copy(alpha = alpha))
-            }
-
-            WidgetConfig.Ink.Dark -> {
-                ColorProvider(deepInk.copy(alpha = alpha))
-            }
+    private fun provider(ink: WidgetConfig.Ink, alpha: Float) = when (ink) {
+        WidgetConfig.Ink.Auto -> {
+            DayNightColorProvider(
+                day = deepInk.copy(alpha = alpha),
+                night = paleInk.copy(alpha = alpha),
+            )
         }
+
+        WidgetConfig.Ink.Light -> {
+            ColorProvider(paleInk.copy(alpha = alpha))
+        }
+
+        WidgetConfig.Ink.Dark -> {
+            ColorProvider(deepInk.copy(alpha = alpha))
+        }
+    }
 }
 
 @Composable
@@ -513,13 +512,7 @@ private fun OneHabitCalendar(
 
 /** An [InkLayers] drawing: the ink mask tinted for the theme, the accents laid over it as they are. */
 @Composable
-private fun LayerImage(
-    layers: InkLayers,
-    ink: ColorProvider,
-    width: Dp,
-    height: Dp,
-    contentDescription: String?,
-) {
+private fun LayerImage(layers: InkLayers, ink: ColorProvider, width: Dp, height: Dp, contentDescription: String?) {
     Box(GlanceModifier.size(width, height)) {
         Image(
             provider = ImageProvider(layers.ink),

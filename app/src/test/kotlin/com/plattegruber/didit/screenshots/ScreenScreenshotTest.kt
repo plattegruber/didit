@@ -29,13 +29,13 @@ import com.plattegruber.didit.ui.log.LogActions
 import com.plattegruber.didit.ui.log.LogContent
 import com.plattegruber.didit.ui.log.LogTarget
 import com.plattegruber.didit.ui.theme.DiditTheme
+import java.time.LocalDate
+import java.time.YearMonth
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.time.LocalDate
-import java.time.YearMonth
 
 private object NoActions : LogActions {
     override fun toggleDone(habitId: HabitId, date: LocalDate) = Unit
@@ -61,21 +61,19 @@ class ScreenScreenshotTest {
     }
 
     @Test
-    fun home() =
-        capture {
-            HomeContent(
-                state = HomeState.Ready(DesignSamples.TODAY, DesignSamples.all.map { HomeRow(it, emptyList()) }),
-                actions = NoActions,
-                onOpenHistory = {},
-                onCreateHabit = {},
-            )
-        }
+    fun home() = capture {
+        HomeContent(
+            state = HomeState.Ready(DesignSamples.TODAY, DesignSamples.all.map { HomeRow(it, emptyList()) }),
+            actions = NoActions,
+            onOpenHistory = {},
+            onCreateHabit = {},
+        )
+    }
 
     @Test
-    fun homeEmpty() =
-        capture {
-            HomeContent(HomeState.Ready(DesignSamples.TODAY, emptyList()), NoActions, {}, {})
-        }
+    fun homeEmpty() = capture {
+        HomeContent(HomeState.Ready(DesignSamples.TODAY, emptyList()), NoActions, {}, {})
+    }
 
     @Composable
     private fun Sheet(content: @Composable () -> Unit) {
@@ -85,138 +83,131 @@ class ScreenScreenshotTest {
     }
 
     @Test
-    fun logChoice() =
-        capture {
-            Sheet {
-                LogContent(
-                    LogTarget(DesignSamples.meals, DesignSamples.TODAY, DesignSamples.mealsToday),
-                    DesignSamples.TODAY,
-                    NoActions,
-                    onClose = {},
-                )
-            }
-        }
-
-    @Test
-    fun logAmount() =
-        capture {
-            Sheet {
-                LogContent(
-                    LogTarget(
-                        DesignSamples.pages,
-                        DesignSamples.TODAY,
-                        DesignSamples.amountToday(DesignSamples.pages, 12.0),
-                    ),
-                    DesignSamples.TODAY,
-                    NoActions,
-                    onClose = {},
-                )
-            }
-        }
-
-    @Test
-    fun logCount() =
-        capture {
-            Sheet {
-                LogContent(
-                    LogTarget(
-                        DesignSamples.coffee,
-                        DesignSamples.TODAY,
-                        DesignSamples.amountToday(DesignSamples.coffee, 1.0),
-                    ),
-                    DesignSamples.TODAY,
-                    NoActions,
-                    onClose = {},
-                )
-            }
-        }
-
-    @Test
-    fun logDone() =
-        capture {
-            Sheet {
-                LogContent(
-                    LogTarget(
-                        DesignSamples.walk,
-                        DesignSamples.TODAY,
-                        emptyList(),
-                    ),
-                    DesignSamples.TODAY,
-                    NoActions,
-                    onClose = {
-                    },
-                )
-            }
-        }
-
-    @Test
-    fun editorNew() =
-        capture {
-            EditorContent(
-                state =
-                    EditorState(
-                        isNew = true,
-                        options =
-                            listOf(
-                                OptionRow(0, null, "", Swatch.Ink),
-                                OptionRow(1, null, "", Swatch.Blue),
-                                OptionRow(2, null, "", Swatch.Amber),
-                            ),
-                    ),
-                errors = emptySet(),
-                canAddOption = true,
-                onBack = {},
-                onNameChange = {},
-                onKindChange = {},
-                onUnitChange = {},
-                onOptionLabelChange = { _, _ -> },
-                onOptionSwatchClick = {},
-                onAddOption = {},
-                onSave = {},
-                onDelete = {},
+    fun logChoice() = capture {
+        Sheet {
+            LogContent(
+                LogTarget(DesignSamples.meals, DesignSamples.TODAY, DesignSamples.mealsToday),
+                DesignSamples.TODAY,
+                NoActions,
+                onClose = {},
             )
         }
+    }
 
     @Test
-    fun editorAmount() =
-        capture {
-            EditorContent(
-                state = EditorState(isNew = false, name = "Pages", kind = KindChoice.Amount, unit = "pages"),
-                errors = emptySet(),
-                canAddOption = true,
-                onBack = {},
-                onNameChange = {},
-                onKindChange = {},
-                onUnitChange = {},
-                onOptionLabelChange = { _, _ -> },
-                onOptionSwatchClick = {},
-                onAddOption = {},
-                onSave = {},
-                onDelete = {},
+    fun logAmount() = capture {
+        Sheet {
+            LogContent(
+                LogTarget(
+                    DesignSamples.pages,
+                    DesignSamples.TODAY,
+                    DesignSamples.amountToday(DesignSamples.pages, 12.0),
+                ),
+                DesignSamples.TODAY,
+                NoActions,
+                onClose = {},
             )
         }
+    }
 
     @Test
-    fun history() =
-        capture {
-            val history = DesignSamples.mealsHistory
-            HistoryContent(
-                state =
-                    HistoryState.Ready(
-                        history = history,
-                        entries = emptyList(),
-                        stats = history.habit.stats(history.days, DesignSamples.TODAY),
-                        today = DesignSamples.TODAY,
-                        month = YearMonth.from(DesignSamples.TODAY),
-                        canGoBack = true,
-                        canGoForward = false,
-                    ),
-                actions = NoActions,
-                onBack = {},
-                onEdit = {},
-                onPreviousMonth = {},
-                onNextMonth = {},
-                onAddWidget = {},
+    fun logCount() = capture {
+        Sheet {
+            LogContent(
+                LogTarget(
+                    DesignSamples.coffee,
+                    DesignSamples.TODAY,
+                    DesignSamples.amountToday(DesignSamples.coffee, 1.0),
+                ),
+                DesignSamples.TODAY,
+                NoActions,
+                onClose = {},
             )
         }
+    }
+
+    @Test
+    fun logDone() = capture {
+        Sheet {
+            LogContent(
+                LogTarget(
+                    DesignSamples.walk,
+                    DesignSamples.TODAY,
+                    emptyList(),
+                ),
+                DesignSamples.TODAY,
+                NoActions,
+                onClose = {
+                },
+            )
+        }
+    }
+
+    @Test
+    fun editorNew() = capture {
+        EditorContent(
+            state =
+                EditorState(
+                    isNew = true,
+                    options =
+                        listOf(
+                            OptionRow(0, null, "", Swatch.Ink),
+                            OptionRow(1, null, "", Swatch.Blue),
+                            OptionRow(2, null, "", Swatch.Amber),
+                        ),
+                ),
+            errors = emptySet(),
+            canAddOption = true,
+            onBack = {},
+            onNameChange = {},
+            onKindChange = {},
+            onUnitChange = {},
+            onOptionLabelChange = { _, _ -> },
+            onOptionSwatchClick = {},
+            onAddOption = {},
+            onSave = {},
+            onDelete = {},
+        )
+    }
+
+    @Test
+    fun editorAmount() = capture {
+        EditorContent(
+            state = EditorState(isNew = false, name = "Pages", kind = KindChoice.Amount, unit = "pages"),
+            errors = emptySet(),
+            canAddOption = true,
+            onBack = {},
+            onNameChange = {},
+            onKindChange = {},
+            onUnitChange = {},
+            onOptionLabelChange = { _, _ -> },
+            onOptionSwatchClick = {},
+            onAddOption = {},
+            onSave = {},
+            onDelete = {},
+        )
+    }
+
+    @Test
+    fun history() = capture {
+        val history = DesignSamples.mealsHistory
+        HistoryContent(
+            state =
+                HistoryState.Ready(
+                    history = history,
+                    entries = emptyList(),
+                    stats = history.habit.stats(history.days, DesignSamples.TODAY),
+                    today = DesignSamples.TODAY,
+                    month = YearMonth.from(DesignSamples.TODAY),
+                    canGoBack = true,
+                    canGoForward = false,
+                ),
+            actions = NoActions,
+            onBack = {},
+            onEdit = {},
+            onPreviousMonth = {},
+            onNextMonth = {},
+            onAddWidget = {},
+        )
+    }
 }

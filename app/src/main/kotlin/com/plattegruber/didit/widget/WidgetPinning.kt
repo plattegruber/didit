@@ -13,9 +13,9 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import com.plattegruber.didit.core.domain.model.HabitId
 import com.plattegruber.didit.di.ApplicationScope
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /** Asks the launcher to place a widget showing one habit, for launchers that allow it. */
 object WidgetPinning {

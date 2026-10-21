@@ -212,14 +212,13 @@ object DesignSamples {
             )
         }
 
-    fun amountToday(habit: Habit, total: Double): List<Entry> =
-        listOf(
-            Entry(
-                id = EntryId(100),
-                habitId = habit.id,
-                date = TODAY,
-                value = EntryValue.Amount(total),
-                loggedAt = TODAY.atTime(9, 0).toInstant(ZoneOffset.UTC),
-            ),
-        )
+    fun amountToday(habit: Habit, total: Double): List<Entry> = listOf(
+        Entry(
+            id = EntryId(100),
+            habitId = habit.id,
+            date = TODAY,
+            value = EntryValue.Amount(total),
+            loggedAt = TODAY.atTime(9, 0).toInstant(ZoneOffset.UTC),
+        ),
+    )
 }
