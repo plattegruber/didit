@@ -11,3 +11,8 @@ build/
 *.apk
 *.aab
 .claude/
+
+# Secrets - never commit these
+keystore.properties
+*.jks
+*.keystore

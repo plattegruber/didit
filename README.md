@@ -46,7 +46,14 @@ Requires JDK 21 and the Android SDK (compile SDK 37).
 ./gradlew :core:domain:test :core:data:testDebugUnitTest :app:testDebugUnitTest
 ./gradlew recordRoborazziDebug   # re-record screenshots after a visual change
 ./gradlew verifyRoborazziDebug   # compare against the recorded screenshots
+./gradlew :app:bundleRelease     # signed AAB for Play (needs keystore.properties)
 ```
+
+## Play
+
+Package `dev.platte.didit`. Release signing needs `keystore.properties` and `upload-keystore.jks`
+in the project root. Both are gitignored, and without them the release build is unsigned. Bump
+`versionCode` in `app/build.gradle.kts` for every upload.
 
 ## How it's put together
 

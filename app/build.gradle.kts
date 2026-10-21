@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -7,12 +9,20 @@ plugins {
     alias(libs.plugins.roborazzi)
 }
 
+// Release signing is wired in only when keystore.properties is present (it and the upload key are
+// gitignored), so a fresh checkout and CI still build an unsigned release.
+val keystoreProps =
+    Properties().apply {
+        val file = rootProject.file("keystore.properties")
+        if (file.exists()) file.inputStream().use { load(it) }
+    }
+
 android {
     namespace = "com.plattegruber.didit"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.plattegruber.didit"
+        applicationId = "dev.platte.didit"
         minSdk = 26
         targetSdk = 37
         versionCode = 1
@@ -20,11 +30,23 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (keystoreProps.isNotEmpty()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (keystoreProps.isNotEmpty()) signingConfig = signingConfigs.getByName("release")
         }
     }
 
