@@ -37,7 +37,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-private object NoActions : LogActions {
+internal object NoActions : LogActions {
     override fun toggleDone(habitId: HabitId, date: LocalDate) = Unit
 
     override fun setTotal(habitId: HabitId, date: LocalDate, total: Double) = Unit

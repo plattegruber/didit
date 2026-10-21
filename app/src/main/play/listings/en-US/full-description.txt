@@ -1,0 +1,19 @@
+Didit is a habit tracker built for your home screen. It isn't about streaks or pass/fail goals. It shows what you actually did, so a glance at your launcher tells you how the last two weeks went.
+
+Four ways to see a habit:
+
+• One of: where did you eat today? Home, takeout or out. Each pick is a coloured dot, stacked by day.
+• Amount: pages read, minutes run. A bar for each day, scaled to your usual.
+• Count: cups of coffee, glasses of water. A tally for each day.
+• Done: walked, meditated, stretched. A filled dot, or an empty ring.
+
+The widget:
+
+• Every habit as a row over the last 14 days, or one habit as a 4-week strip or a monthly calendar.
+• Tap a row to log today. Done habits log in a single tap without opening the app.
+• Sits clear on your wallpaper or on a card, and follows light and dark mode.
+• Designed to look at home on minimal launchers such as Niagara.
+
+In the app, log any day, fix a past one from the month view, and see totals, averages and the mix of your choices.
+
+Private by design: everything stays on your phone. No account, no ads, no analytics and no network access.
