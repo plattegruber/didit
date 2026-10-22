@@ -90,9 +90,6 @@ private object Layout {
     /** Width of one day in the single-habit strip (four weeks across a phone). */
     const val STRIP_DAY_WIDTH = 12f
 
-    /** Roughly how wide one 10sp monospaced character is, for breaking legends into lines. */
-    const val LEGEND_CHAR_WIDTH = 6.2f
-    const val LEGEND_GAP = 5f
     const val MIN_ROW_DAYS = 5
     const val MAX_ROW_DAYS = 31
     const val MIN_WEEKS = 2
@@ -287,7 +284,7 @@ private fun NameCell(habit: Habit, colors: WidgetColors) {
         GlanceModifier.height(RowsScene.ROW_HEIGHT.dp).width(Layout.NameWidth),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(habit.name, style = textStyle(colors.ink, 13.sp, FontWeight.Medium), maxLines = 1)
+        Text(habit.name, style = textStyle(colors.ink, NAME_SIZE.sp, FontWeight.Medium), maxLines = 1)
         Legend(habit, colors)
     }
 }
@@ -295,34 +292,23 @@ private fun NameCell(habit: Habit, colors: WidgetColors) {
 @Composable
 private fun Legend(habit: Habit, colors: WidgetColors) {
     val kind = habit.kind as? HabitKind.Choice ?: return
-    // RemoteViews can't wrap a row, so the legend is broken into lines up front.
-    legendLines(kind.activeOptions.map { it.label.lowercase() }, Layout.NameWidth.value).forEach { line ->
+    val context = LocalContext.current
+    val options = kind.activeOptions.associateBy { it.label.lowercase() }
+    val fit =
+        remember(options.keys) {
+            val measure = DeviceTextMeasure(context)
+            val room = RowsScene.ROW_HEIGHT - measure.lineHeight(NAME_SIZE, Face.Sans)
+            fitLegend(options.keys.toList(), Layout.NameWidth.value, room, measure)
+        }
+    fit.lines.forEach { line ->
         Row {
             line.forEachIndexed { index, label ->
-                if (index > 0) Spacer(GlanceModifier.width(Layout.LEGEND_GAP.dp))
-                val option = kind.activeOptions.first { it.label.lowercase() == label }
-                Text(label, style = monoStyle(colors.swatch(option.swatch), 10.sp), maxLines = 1)
+                if (index > 0) Spacer(GlanceModifier.width(LEGEND_GAP.dp))
+                val swatch = options.getValue(label).swatch
+                Text(label, style = monoStyle(colors.swatch(swatch), fit.sizeSp.sp), maxLines = 1)
             }
         }
     }
-}
-
-/** Greedily packs [labels] into lines no wider than [width] dp. */
-internal fun legendLines(labels: List<String>, width: Float): List<List<String>> {
-    val lines = mutableListOf<MutableList<String>>()
-    var used = 0f
-    for (label in labels) {
-        val labelWidth = label.length * Layout.LEGEND_CHAR_WIDTH
-        val line = lines.lastOrNull()
-        if (line != null && used + Layout.LEGEND_GAP + labelWidth <= width) {
-            line += label
-            used += Layout.LEGEND_GAP + labelWidth
-        } else {
-            lines += mutableListOf(label)
-            used = labelWidth
-        }
-    }
-    return lines
 }
 
 @Composable
@@ -533,6 +519,9 @@ private fun LayerImage(layers: InkLayers, ink: ColorProvider, width: Dp, height:
 }
 
 private const val LEGEND_SPACE = 18f
+
+/** The habit name in the rows, in sp. */
+private const val NAME_SIZE = 13f
 private const val CALENDAR_HEADER_GAP = 6f
 
 private fun HabitHistory.usesAccents(): Boolean =

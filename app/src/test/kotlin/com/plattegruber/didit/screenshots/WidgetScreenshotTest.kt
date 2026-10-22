@@ -28,6 +28,7 @@ import com.plattegruber.didit.widget.WidgetModel
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -85,6 +86,17 @@ class WidgetScreenshotTest {
 
     @Test
     fun allHabits() = runTest {
+        render(
+            WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
+            WidgetConfig(ink = WidgetConfig.Ink.Light),
+            DpSize(366.dp, 290.dp),
+        ).captureRoboImage()
+    }
+
+    /** At a large font scale the "one of" legend shrinks a step rather than clipping a label. */
+    @Test
+    fun allHabitsLargeText() = runTest {
+        RuntimeEnvironment.setFontScale(1.3f)
         render(
             WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
             WidgetConfig(ink = WidgetConfig.Ink.Light),
