@@ -8,6 +8,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.plattegruber.didit.core.domain.model.EntryId
@@ -32,6 +34,7 @@ import com.plattegruber.didit.ui.theme.DiditTheme
 import com.plattegruber.didit.widget.LauncherTheme
 import com.plattegruber.didit.widget.WidgetConfig
 import com.plattegruber.didit.widget.WidgetConfigContent
+import com.plattegruber.didit.widget.WidgetModel
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
@@ -228,6 +231,35 @@ class ScreenScreenshotTest {
                     surface = 0xFF22272B.toInt(),
                     heardAt = NOW.minusSeconds(120),
                 ),
+            model = WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
+            widgetSize = DpSize(366.dp, 290.dp),
+            onChange = {},
+            onOpenApp = {},
+            onDone = {},
+            now = NOW,
+        )
+    }
+
+    /** Every setting at once, on a screen tall enough to show them all. */
+    @Test
+    @Config(qualifiers = "w390dp-h2400dp-night-xxhdpi")
+    fun widgetConfigEverything() = capture {
+        WidgetConfigContent(
+            habits = DesignSamples.all.map { it.habit },
+            config =
+                WidgetConfig(
+                    card = true,
+                    palette = WidgetConfig.Palette.Custom,
+                    custom = WidgetConfig.CustomColors(text = 0xFFF4F0E9.toInt(), glyphs = 0xFFE8A54B.toInt()),
+                    cardOpacity = 80,
+                    font = WidgetConfig.TextFont.SpaceGrotesk,
+                    labelFont = WidgetConfig.LabelFont.JetBrainsMono,
+                    textSize = WidgetConfig.TextSize.Large,
+                    hidden = setOf(WidgetConfig.Element.Captions),
+                ),
+            launcher = LauncherTheme.None,
+            model = WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
+            widgetSize = DpSize(366.dp, 290.dp),
             onChange = {},
             onOpenApp = {},
             onDone = {},

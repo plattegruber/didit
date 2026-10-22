@@ -3,14 +3,12 @@
 
 package com.plattegruber.didit.widget
 
-import android.os.Build
+import android.content.Context
+import android.content.res.Resources
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
@@ -21,47 +19,27 @@ import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
-import androidx.glance.color.ColorProvider as DayNightColorProvider
-import androidx.glance.color.DynamicThemeColorProviders
-import androidx.glance.layout.Alignment
+import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ContentScale
-import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
-import androidx.glance.layout.size
-import androidx.glance.layout.width
-import androidx.glance.text.FontFamily
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
-import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import com.plattegruber.didit.R
 import com.plattegruber.didit.core.domain.model.Habit
-import com.plattegruber.didit.core.domain.model.HabitKind
-import com.plattegruber.didit.core.domain.model.Swatch
-import com.plattegruber.didit.core.domain.viz.DayRange
 import com.plattegruber.didit.core.domain.viz.WindowSummary
-import com.plattegruber.didit.core.domain.viz.windowSummary
 import com.plattegruber.didit.ui.text.DayText
-import com.plattegruber.didit.ui.theme.DarkDiditColors
-import com.plattegruber.didit.ui.theme.LightDiditColors
-import com.plattegruber.didit.ui.theme.SwatchColors
-import com.plattegruber.didit.ui.viz.CalendarScene
-import com.plattegruber.didit.ui.viz.HabitHistory
-import com.plattegruber.didit.ui.viz.HabitScenes
-import com.plattegruber.didit.ui.viz.RowsScene
-import com.plattegruber.didit.ui.viz.Tone
+import com.plattegruber.didit.ui.text.SummaryText
 import java.time.LocalDate
 import java.time.temporal.WeekFields
 import java.util.Locale
-import kotlin.math.floor
 
-/** Where taps on the widget go. Kept apart from the layout so the layout can be tested alone. */
+/** What the widget's taps do, kept apart so the layouts can be rendered in tests. */
 interface WidgetActions {
     /** Logs today for [habit]: a direct toggle for yes/no habits, the log sheet for the rest. */
     fun log(habit: Habit): Action
@@ -73,123 +51,14 @@ interface WidgetActions {
     fun configure(): Action
 }
 
-/** The design's widget layouts, in dp. */
-private object Layout {
-    val NameWidth = 72.dp
-    val SummaryWidth = 52.dp
-    val ColumnGap = 10.dp
-    val HeaderHeight = 18.dp
-    val HeaderGap = 10.dp
-    val CardRadius = 24.dp
-    val CardPadding = 12.dp
-    val ClearPadding = 4.dp
-    val MixWidth = 44.dp
-    val MixHeight = 4.dp
-
-    /** Width of one day in the multi-habit rows (14 days across a phone). */
-    const val ROW_DAY_WIDTH = 14.5f
-
-    /** Width of one day in the single-habit strip (four weeks across a phone). */
-    const val STRIP_DAY_WIDTH = 12f
-
-    const val MIN_ROW_DAYS = 5
-    const val MAX_ROW_DAYS = 31
-    const val MIN_WEEKS = 2
-    const val MAX_WEEKS = 6
-    const val MAX_CALENDAR_ROW = 40f
-
-    /** Taller than this fraction of its width, a single habit shows as a calendar. */
-    const val CALENDAR_ASPECT = 0.7f
-}
+private val CardRadius = 24.dp
+private val CardPadding = 12.dp
+private val ClearPadding = 4.dp
 
 /**
- * The widget's colours: ink that follows the theme (or the user's pick), its quieter shades, and
- * the colour the glyphs are drawn in. With the launcher palette, text takes the launcher's text
- * colour (its on-surface colour on a card), glyphs its accent, and the card its surface; each
- * falls back to the system's Material You colours on Android 12+, then to Didit's own.
+ * The widget: drawn whole as tinted layers (so fonts, sizes and layout are exactly Didit's), with
+ * invisible tap targets over it that also carry what a screen reader says.
  */
-class WidgetColors(
-    config: WidgetConfig,
-    launcher: LauncherTheme = LauncherTheme.None,
-    systemColors: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
-) {
-    /** Pale ink, for a dark theme or wallpaper. */
-    private val paleInk = DarkDiditColors.ink
-
-    /** Deep ink, for a light theme or wallpaper. */
-    private val deepInk = LightDiditColors.ink
-
-    private val matchLauncher = config.palette == WidgetConfig.Palette.Launcher
-
-    /** The launcher's text colour, unless the user picked light or dark ink themselves. */
-    private val launcherText: Int? =
-        if (matchLauncher && config.ink == WidgetConfig.Ink.Auto) {
-            if (config.card) launcher.onSurface else launcher.text
-        } else {
-            null
-        }
-
-    val ink: ColorProvider = launcherText?.let { fixed(it, Tone.Ink.alpha) } ?: provider(config.ink, Tone.Ink.alpha)
-    val subtle: ColorProvider =
-        launcherText?.let { fixed(it, Tone.Label.alpha) } ?: provider(config.ink, Tone.Label.alpha)
-
-    /** The dots, bars and tallies, and the quieter marks drawn with them. */
-    val glyph: ColorProvider =
-        when {
-            !matchLauncher -> ink
-            launcher.accent != null -> fixed(launcher.accent, 1f)
-            systemColors -> DynamicThemeColorProviders.primary
-            else -> ink
-        }
-
-    val background: ColorProvider? =
-        when {
-            !config.card -> null
-            matchLauncher && launcher.surface != null -> fixed(launcher.surface, 1f)
-            matchLauncher && systemColors -> DynamicThemeColorProviders.widgetBackground
-            else -> diditSurface(config.ink)
-        }
-
-    fun swatch(swatch: Swatch): ColorProvider =
-        if (swatch == Swatch.Ink) glyph else ColorProvider(Color(SwatchColors.argb(swatch)))
-
-    private fun fixed(argb: Int, alpha: Float) = ColorProvider(Color(argb).copy(alpha = alpha))
-
-    private fun diditSurface(ink: WidgetConfig.Ink) = when (ink) {
-        WidgetConfig.Ink.Auto -> {
-            DayNightColorProvider(
-                day = LightDiditColors.surface,
-                night = DarkDiditColors.surface,
-            )
-        }
-
-        WidgetConfig.Ink.Light -> {
-            ColorProvider(DarkDiditColors.surface)
-        }
-
-        WidgetConfig.Ink.Dark -> {
-            ColorProvider(LightDiditColors.surface)
-        }
-    }
-
-    private fun provider(ink: WidgetConfig.Ink, alpha: Float) = when (ink) {
-        WidgetConfig.Ink.Auto -> {
-            DayNightColorProvider(
-                day = deepInk.copy(alpha = alpha),
-                night = paleInk.copy(alpha = alpha),
-            )
-        }
-
-        WidgetConfig.Ink.Light -> {
-            ColorProvider(paleInk.copy(alpha = alpha))
-        }
-
-        WidgetConfig.Ink.Dark -> {
-            ColorProvider(deepInk.copy(alpha = alpha))
-        }
-    }
-}
-
 @Composable
 fun WidgetContent(
     model: WidgetModel,
@@ -197,358 +66,28 @@ fun WidgetContent(
     actions: WidgetActions,
     launcher: LauncherTheme = LauncherTheme.None,
 ) {
-    val colors = remember(config, launcher) { WidgetColors(config, launcher) }
-    val padding = if (config.card) Layout.CardPadding else Layout.ClearPadding
-    val background = colors.background
+    val context = LocalContext.current
+    val palette = remember(config, launcher) { WidgetPalette.resolve(config, launcher, SystemColors.of(context)) }
+    val padding = if (config.card) CardPadding else ClearPadding
+    val size = LocalSize.current
+    val width = (size.width - padding * 2).value
+    val height = (size.height - padding * 2).value
+    val type = remember(config) { WidgetType(context, config) }
+    val drawing =
+        remember(model, config, width, height) { widgetLayout(context, config, type).layout(model, width, height) }
+    val layers = remember(drawing) { LayerRenderer(context, config, type).render(drawing) }
+
+    val card = palette.card
     val frame =
-        if (background != null) {
-            GlanceModifier.fillMaxSize().background(background).cornerRadius(Layout.CardRadius)
+        if (card != null) {
+            GlanceModifier.fillMaxSize().background(card.provider()).cornerRadius(CardRadius)
         } else {
             GlanceModifier.fillMaxSize()
         }
-    val size = LocalSize.current
-    val width = size.width - padding * 2
-    val height = size.height - padding * 2
-
     Box(frame.padding(padding)) {
-        when (model) {
-            WidgetModel.Loading -> {}
-
-            WidgetModel.NoHabits -> {
-                Message(R.string.widget_empty, colors, actions.openApp())
-            }
-
-            WidgetModel.HabitMissing -> {
-                Message(R.string.widget_habit_missing, colors, actions.configure())
-            }
-
-            is WidgetModel.AllHabits -> {
-                AllHabits(model, colors, actions, width, height)
-            }
-
-            is WidgetModel.OneHabit -> {
-                if (height.value >= width.value * Layout.CALENDAR_ASPECT) {
-                    OneHabitCalendar(model, colors, actions, width, height)
-                } else {
-                    OneHabitStrip(model, colors, actions, width, height)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun Message(text: Int, colors: WidgetColors, action: Action) {
-    Box(GlanceModifier.fillMaxSize().clickable(action), contentAlignment = Alignment.Center) {
-        Text(LocalContext.current.getString(text), style = textStyle(colors.subtle, 13.sp))
-    }
-}
-
-@Composable
-private fun AllHabits(
-    model: WidgetModel.AllHabits,
-    colors: WidgetColors,
-    actions: WidgetActions,
-    width: Dp,
-    height: Dp,
-) {
-    val context = LocalContext.current
-    val locale = context.locale()
-    val stripWidth = width - Layout.NameWidth - Layout.SummaryWidth - Layout.ColumnGap * 2
-    val dayCount =
-        floor(stripWidth.value / Layout.ROW_DAY_WIDTH)
-            .toInt()
-            .coerceIn(Layout.MIN_ROW_DAYS, Layout.MAX_ROW_DAYS)
-    val roomForRows = height - Layout.HeaderHeight - Layout.HeaderGap - RowsScene.LETTERS_HEIGHT.dp
-    val rowCount = floor(roomForRows.value / RowsScene.ROW_HEIGHT).toInt().coerceIn(1, model.histories.size)
-    val histories = model.histories.take(rowCount)
-    val days = DayRange.lastDays(model.today, dayCount)
-    val dates = days.map { it.date }
-
-    val scene =
-        remember(histories, model.today, dayCount, locale) {
-            HabitScenes.rows(histories, model.today, dayCount, locale)
-        }
-    val layers =
-        remember(scene, stripWidth) {
-            val hasAccents = histories.any { it.usesAccents() }
-            LayerRenderer(context).render(stripWidth.value, scene.height, hasAccents) { canvas, w, _ ->
-                drawRows(canvas, scene, w)
-            }
-        }
-
-    Column(GlanceModifier.fillMaxSize()) {
-        Row(
-            GlanceModifier.fillMaxWidth().height(Layout.HeaderHeight).clickable(actions.openApp()),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(context.getString(R.string.wordmark), style = textStyle(colors.ink, 15.sp, FontWeight.Bold))
-            Spacer(GlanceModifier.defaultWeight())
-            Text(DayText.range(dates.first(), dates.last(), locale), style = monoStyle(colors.subtle, 11.sp))
-        }
-        Spacer(GlanceModifier.height(Layout.HeaderGap))
-        Box {
-            Row {
-                Column(GlanceModifier.width(Layout.NameWidth)) {
-                    histories.forEach { NameCell(it.habit, colors) }
-                }
-                Spacer(GlanceModifier.width(Layout.ColumnGap))
-                LayerImage(
-                    layers,
-                    colors.glyph,
-                    stripWidth,
-                    scene.height.dp,
-                    context.resources.getQuantityString(R.plurals.home_rows_description, dayCount, dayCount),
-                )
-                Spacer(GlanceModifier.width(Layout.ColumnGap))
-                Column(GlanceModifier.width(Layout.SummaryWidth)) {
-                    val rowHeight = GlanceModifier.height(RowsScene.ROW_HEIGHT.dp)
-                    histories.forEach { SummaryCell(it, dates, colors, rowHeight) }
-                }
-            }
-            Column {
-                histories.forEach { history ->
-                    Box(
-                        GlanceModifier
-                            .fillMaxWidth()
-                            .height(RowsScene.ROW_HEIGHT.dp)
-                            .clickable(actions.log(history.habit)),
-                    ) {}
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun NameCell(habit: Habit, colors: WidgetColors) {
-    Column(
-        GlanceModifier.height(RowsScene.ROW_HEIGHT.dp).width(Layout.NameWidth),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(habit.name, style = textStyle(colors.ink, NAME_SIZE.sp, FontWeight.Medium), maxLines = 1)
-        Legend(habit, colors)
-    }
-}
-
-@Composable
-private fun Legend(habit: Habit, colors: WidgetColors) {
-    val kind = habit.kind as? HabitKind.Choice ?: return
-    val context = LocalContext.current
-    val options = kind.activeOptions.associateBy { it.label.lowercase() }
-    val fit =
-        remember(options.keys) {
-            val measure = DeviceTextMeasure(context)
-            val room = RowsScene.ROW_HEIGHT - measure.lineHeight(NAME_SIZE, Face.Sans)
-            fitLegend(options.keys.toList(), Layout.NameWidth.value, room, measure)
-        }
-    fit.lines.forEach { line ->
-        Row {
-            line.forEachIndexed { index, label ->
-                if (index > 0) Spacer(GlanceModifier.width(LEGEND_GAP.dp))
-                val swatch = options.getValue(label).swatch
-                Text(label, style = monoStyle(colors.swatch(swatch), fit.sizeSp.sp), maxLines = 1)
-            }
-        }
-    }
-}
-
-@Composable
-private fun SummaryCell(
-    history: HabitHistory,
-    dates: List<LocalDate>,
-    colors: WidgetColors,
-    modifier: GlanceModifier = GlanceModifier,
-) {
-    val context = LocalContext.current
-    val summary = history.habit.windowSummary(history.days, dates)
-    val text = DayText.summary(context.resources, summary, history.habit.kind.unit, context.locale())
-    Column(
-        modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.End,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text.value, style = textStyle(colors.ink, 16.sp, FontWeight.Medium), maxLines = 1)
-        if (summary is WindowSummary.Picks && summary.mix.isNotEmpty()) {
-            Spacer(GlanceModifier.height(3.dp))
-            MixImage(summary, colors)
-            Spacer(GlanceModifier.height(3.dp))
-        }
-        if (text.label.isNotBlank()) Text(text.label, style = monoStyle(colors.subtle, 10.sp), maxLines = 1)
-    }
-}
-
-@Composable
-private fun MixImage(summary: WindowSummary.Picks, colors: WidgetColors, width: Dp = Layout.MixWidth) {
-    val context = LocalContext.current
-    val parts = summary.mix.map { it.swatch to it.count }
-    val layers =
-        remember(parts, width) {
-            val hasAccents = parts.any { it.first != Swatch.Ink }
-            LayerRenderer(context).render(width.value, Layout.MixHeight.value, hasAccents) { canvas, w, h ->
-                drawMix(canvas, parts, w, h)
-            }
-        }
-    LayerImage(layers, colors.glyph, width, Layout.MixHeight, contentDescription = null)
-}
-
-@Composable
-private fun OneHabitStrip(
-    model: WidgetModel.OneHabit,
-    colors: WidgetColors,
-    actions: WidgetActions,
-    width: Dp,
-    height: Dp,
-) {
-    val context = LocalContext.current
-    val locale = context.locale()
-    val history = model.history
-    val weeks =
-        floor(width.value / Layout.STRIP_DAY_WIDTH / DayRange.DAYS_PER_WEEK)
-            .toInt()
-            .coerceIn(1, Layout.MAX_WEEKS)
-    val dayCount = weeks * DayRange.DAYS_PER_WEEK
-    val dates = DayRange.lastDays(model.today, dayCount).map { it.date }
-    val stripHeight = height - Layout.HeaderHeight - Layout.HeaderGap
-    val scene =
-        remember(history, model.today, dayCount, locale) {
-            HabitScenes.strip(history, model.today, dayCount, locale)
-        }
-    val layers =
-        remember(scene, width, stripHeight) {
-            LayerRenderer(context).render(width.value, stripHeight.value, history.usesAccents()) { canvas, w, h ->
-                drawStrip(canvas, scene, w, h)
-            }
-        }
-    val summary =
-        DayText.summary(
-            resources = context.resources,
-            summary = history.habit.windowSummary(history.days, dates),
-            unit = history.habit.kind.unit,
-            locale = locale,
-        )
-
-    Column(GlanceModifier.fillMaxSize().clickable(actions.log(history.habit))) {
-        Row(
-            GlanceModifier.fillMaxWidth().height(Layout.HeaderHeight),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(history.habit.name, style = textStyle(colors.ink, 13.sp, FontWeight.Medium), maxLines = 1)
-            Spacer(GlanceModifier.width(8.dp))
-            Text(
-                context.resources.getQuantityString(R.plurals.widget_weeks, weeks, weeks),
-                style = monoStyle(colors.subtle, 10.sp),
-            )
-            Spacer(GlanceModifier.defaultWeight())
-            Text(summary.value, style = textStyle(colors.ink, 16.sp, FontWeight.Medium))
-            if (summary.label.isNotBlank()) {
-                Spacer(GlanceModifier.width(6.dp))
-                Text(summary.label, style = monoStyle(colors.subtle, 10.sp))
-            }
-        }
-        Spacer(GlanceModifier.height(Layout.HeaderGap))
-        LayerImage(
-            layers,
-            colors.glyph,
-            width,
-            stripHeight,
-            context.resources.getQuantityString(R.plurals.widget_history, dayCount, history.habit.name, dayCount),
-        )
-    }
-}
-
-@Composable
-private fun OneHabitCalendar(
-    model: WidgetModel.OneHabit,
-    colors: WidgetColors,
-    actions: WidgetActions,
-    width: Dp,
-    height: Dp,
-) {
-    val context = LocalContext.current
-    val locale = context.locale()
-    val history = model.history
-    val kind = history.habit.kind
-    val legendSpace = if (kind is HabitKind.Choice) LEGEND_SPACE else 0f
-    val gridRoom =
-        height.value - Layout.HeaderHeight.value - CALENDAR_HEADER_GAP - legendSpace -
-            CalendarScene.HEADER_HEIGHT - CalendarScene.HEADER_GAP
-    val rowPitch = CalendarScene.ROW_HEIGHT + CalendarScene.ROW_GAP
-    val weeks =
-        floor((gridRoom + CalendarScene.ROW_GAP) / rowPitch)
-            .toInt()
-            .coerceIn(Layout.MIN_WEEKS, Layout.MAX_WEEKS)
-    val rowHeight =
-        ((gridRoom - (weeks - 1) * CalendarScene.ROW_GAP) / weeks)
-            .coerceIn(CalendarScene.ROW_HEIGHT, Layout.MAX_CALENDAR_ROW)
-    val weekStart = WeekFields.of(locale).firstDayOfWeek
-
-    val scene =
-        remember(history, model.today, weeks, rowHeight, locale) {
-            HabitScenes.lastWeeks(history, model.today, weeks, weekStart, locale).copy(rowHeight = rowHeight)
-        }
-    val layers =
-        remember(scene, width) {
-            LayerRenderer(context).render(width.value, scene.height, history.usesAccents()) { canvas, w, _ ->
-                drawCalendar(canvas, scene, w)
-            }
-        }
-    val dates =
-        scene.cells
-            .map { it.first }
-            .filterNot { it.isFuture }
-            .map { it.date }
-    val summary = history.habit.windowSummary(history.days, dates)
-    val text = DayText.summary(context.resources, summary, kind.unit, locale)
-
-    Column(GlanceModifier.fillMaxSize().clickable(actions.log(history.habit))) {
-        Row(
-            GlanceModifier.fillMaxWidth().height(Layout.HeaderHeight),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(history.habit.name, style = textStyle(colors.ink, 13.sp, FontWeight.Medium), maxLines = 1)
-            Spacer(GlanceModifier.defaultWeight())
-            if (summary is WindowSummary.Picks && summary.mix.isNotEmpty()) {
-                MixImage(summary, colors, width = 32.dp)
-                Spacer(GlanceModifier.width(7.dp))
-            }
-            Text(text.value, style = textStyle(colors.ink, 14.sp, FontWeight.Medium))
-        }
-        Spacer(GlanceModifier.height(CALENDAR_HEADER_GAP.dp))
-        LayerImage(
-            layers,
-            colors.glyph,
-            width,
-            scene.height.dp,
-            context.resources.getQuantityString(R.plurals.widget_history, dates.size, history.habit.name, dates.size),
-        )
-        if (kind is HabitKind.Choice) {
-            Spacer(GlanceModifier.defaultWeight())
-            Row {
-                kind.activeOptions.forEachIndexed { index, option ->
-                    if (index > 0) Spacer(GlanceModifier.width(8.dp))
-                    Text(
-                        option.label.lowercase(),
-                        style = monoStyle(colors.swatch(option.swatch), 10.sp),
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** An [InkLayers] drawing: the ink mask tinted for the theme, the accents laid over it as they are. */
-@Composable
-private fun LayerImage(layers: InkLayers, ink: ColorProvider, width: Dp, height: Dp, contentDescription: String?) {
-    Box(GlanceModifier.size(width, height)) {
-        Image(
-            provider = ImageProvider(layers.ink),
-            contentDescription = contentDescription,
-            modifier = GlanceModifier.fillMaxSize(),
-            contentScale = ContentScale.FillBounds,
-            colorFilter = ColorFilter.tint(ink),
-        )
+        if (model == WidgetModel.Loading) return@Box
+        Layer(layers.text, palette.text, drawing.description)
+        Layer(layers.glyphs, palette.glyphs, contentDescription = null)
         layers.accents?.let { accents ->
             Image(
                 provider = ImageProvider(accents),
@@ -557,22 +96,77 @@ private fun LayerImage(layers: InkLayers, ink: ColorProvider, width: Dp, height:
                 contentScale = ContentScale.FillBounds,
             )
         }
+        HitAreas(drawing, actions)
     }
 }
 
-private const val LEGEND_SPACE = 18f
+@Composable
+private fun Layer(mask: android.graphics.Bitmap, color: DayNight, contentDescription: String?) {
+    Image(
+        provider = ImageProvider(mask),
+        contentDescription = contentDescription,
+        modifier = GlanceModifier.fillMaxSize(),
+        contentScale = ContentScale.FillBounds,
+        colorFilter = ColorFilter.tint(color.provider()),
+    )
+}
 
-/** The habit name in the rows, in sp. */
-private const val NAME_SIZE = 13f
-private const val CALENDAR_HEADER_GAP = 6f
+@Composable
+private fun HitAreas(drawing: WidgetDrawing, actions: WidgetActions) {
+    Column(GlanceModifier.fillMaxSize()) {
+        var y = 0f
+        for (hit in drawing.hits.sortedBy { it.top }) {
+            val top = hit.top * drawing.scale
+            if (top > y) Spacer(GlanceModifier.height((top - y).dp))
+            val area =
+                GlanceModifier
+                    .fillMaxWidth()
+                    .height((hit.height * drawing.scale).dp)
+                    .clickable(hit.tap.action(actions))
+            Box(if (hit.description != null) area.semantics { contentDescription = hit.description } else area) {}
+            y = top + hit.height * drawing.scale
+        }
+    }
+}
 
-private fun HabitHistory.usesAccents(): Boolean =
-    (habit.kind as? HabitKind.Choice)?.options?.any { it.swatch != Swatch.Ink } == true
+private fun Tap.action(actions: WidgetActions): Action = when (this) {
+    Tap.OpenApp -> actions.openApp()
+    Tap.Configure -> actions.configure()
+    is Tap.Log -> actions.log(habit)
+}
 
-private fun android.content.Context.locale(): Locale = resources.configuration.locales[0]
+private fun DayNight.provider() = ColorProvider(day = Color(day), night = Color(night))
 
-private fun textStyle(color: ColorProvider, size: TextUnit, weight: FontWeight = FontWeight.Normal) =
-    TextStyle(color = color, fontSize = size, fontWeight = weight, fontFamily = FontFamily.SansSerif)
+internal fun widgetLayout(context: Context, config: WidgetConfig, type: WidgetType): WidgetLayout {
+    val locale = context.resources.configuration.locales[0]
+    return WidgetLayout(
+        config,
+        type,
+        ResourceStrings(context.resources, locale),
+        locale,
+        WeekFields.of(locale).firstDayOfWeek,
+    )
+}
 
-private fun monoStyle(color: ColorProvider, size: TextUnit) =
-    TextStyle(color = color, fontSize = size, fontFamily = FontFamily.Monospace)
+/** The widget's words, from the app's resources. */
+internal class ResourceStrings(private val resources: Resources, private val locale: Locale) : WidgetStrings {
+    override val wordmark: String = resources.getString(R.string.wordmark)
+    override val noHabits: String = resources.getString(R.string.widget_empty)
+    override val habitMissing: String = resources.getString(R.string.widget_habit_missing)
+
+    override fun range(from: LocalDate, to: LocalDate): String = DayText.range(from, to, locale)
+
+    override fun weeks(count: Int): String = resources.getQuantityString(R.plurals.widget_weeks, count, count)
+
+    override fun summary(habit: Habit, summary: WindowSummary): SummaryText =
+        DayText.summary(resources, summary, habit.kind.unit, locale)
+
+    override fun row(habit: Habit, summary: SummaryText): String =
+        resources.getString(R.string.home_row_description, habit.name, summary.value, summary.label)
+
+    override fun overview(dayCount: Int): String =
+        resources.getQuantityString(R.plurals.home_rows_description, dayCount, dayCount)
+
+    override fun history(habit: Habit, dayCount: Int): String =
+        resources.getQuantityString(R.plurals.widget_history, dayCount, habit.name, dayCount)
+}

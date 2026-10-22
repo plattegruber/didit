@@ -10,56 +10,91 @@ import com.plattegruber.didit.core.domain.model.Swatch
 import com.plattegruber.didit.core.domain.viz.DayColumn
 import com.plattegruber.didit.core.domain.viz.Glyph
 
+/** What a drawing leaves out; the widget lets people hide these. */
+data class GlyphOptions(
+    /** The column highlights behind today and weekends. */
+    val highlights: Boolean = true,
+    /** Faint placeholders for empty days, and the ring of a yes/no day not done. */
+    val emptyDays: Boolean = true,
+)
+
 /**
  * Draws scenes onto a plain Android [Canvas]. The app (through Compose's native canvas) and the
  * widget (through bitmaps) share this one implementation, so they can never drift apart.
  *
- * All scene sizes are in dp; [unit] is the number of pixels per dp.
+ * All scene sizes are in dp; [unit] is the number of pixels per dp. Labels are [labelSize] pixels.
  */
-class GlyphPainter(private val palette: GlyphPalette, private val unit: Float, labelTypeface: Typeface) {
+class GlyphPainter(
+    private val palette: GlyphPalette,
+    private val unit: Float,
+    labelTypeface: Typeface,
+    labelSize: Float = LABEL_SIZE * unit,
+    private val options: GlyphOptions = GlyphOptions(),
+    private val strongLabelWeight: (Paint) -> Unit = { it.fontVariationSettings = STRONG_WEIGHT },
+) {
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val label =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = labelTypeface
-            textSize = LABEL_SIZE * unit
+            textSize = labelSize
         }
-    private val strongLabel = Paint(label).apply { fontVariationSettings = STRONG_WEIGHT }
+    private val strongLabel = Paint(label).also(strongLabelWeight)
     private val rect = RectF()
     private val clip = Path()
 
-    fun drawRows(canvas: Canvas, scene: RowsScene, width: Float) {
+    /**
+     * Rows of [rowHeight] dp, with a band of weekday letters [lettersHeight] dp tall underneath
+     * (none when zero).
+     */
+    fun drawRows(
+        canvas: Canvas,
+        scene: RowsScene,
+        width: Float,
+        rowHeight: Float = RowsScene.ROW_HEIGHT,
+        lettersHeight: Float = RowsScene.LETTERS_HEIGHT,
+    ) {
         val columns = scene.days.size
         if (columns == 0) return
         val gap = RowsScene.COLUMN_GAP * unit
         val columnWidth = (width - gap * (columns - 1)) / columns
-        val rowHeight = RowsScene.ROW_HEIGHT * unit
+        val rowPixels = rowHeight * unit
+        val lettersPixels = lettersHeight * unit
+        val height = scene.rows.size * rowPixels + lettersPixels
         val metrics = GlyphMetrics.Rows.scaled(unit)
 
         scene.days.forEachIndexed { index, day ->
             val left = index * (columnWidth + gap)
-            drawBand(canvas, day, left, 0f, columnWidth, scene.height * unit, RowsScene.BAND_RADIUS * unit)
+            drawBand(canvas, day, left, 0f, columnWidth, height, RowsScene.BAND_RADIUS * unit)
             scene.rows.forEachIndexed { row, glyphs ->
-                drawGlyph(canvas, glyphs[index], left, row * rowHeight, columnWidth, rowHeight, metrics)
+                drawGlyph(canvas, glyphs[index], left, row * rowPixels, columnWidth, rowPixels, metrics)
             }
-            val lettersTop = scene.rows.size * rowHeight
-            drawLabel(
-                canvas,
-                scene.letters[index],
-                left + columnWidth / 2,
-                lettersTop + RowsScene.LETTERS_HEIGHT * unit / 2,
-                strong = day.isToday,
-                align = Paint.Align.CENTER,
-            )
+            if (lettersPixels > 0f) {
+                drawLabel(
+                    canvas,
+                    scene.letters[index],
+                    left + columnWidth / 2,
+                    scene.rows.size * rowPixels + lettersPixels / 2,
+                    strong = day.isToday,
+                    align = Paint.Align.CENTER,
+                )
+            }
         }
     }
 
-    fun drawStrip(canvas: Canvas, scene: StripScene, width: Float, height: Float) {
+    /** A strip [height] pixels tall, with its week labels in a band [labelHeight] dp tall. */
+    fun drawStrip(
+        canvas: Canvas,
+        scene: StripScene,
+        width: Float,
+        height: Float,
+        labelHeight: Float = StripScene.LABEL_HEIGHT,
+    ) {
         val columns = scene.days.size
         if (columns == 0) return
         val gap = StripScene.COLUMN_GAP * unit
         val columnWidth = (width - gap * (columns - 1)) / columns
-        val labelSpace = if (scene.labels.isEmpty()) 0f else (StripScene.LABEL_GAP + StripScene.LABEL_HEIGHT) * unit
+        val labelSpace = if (scene.labels.isEmpty()) 0f else (StripScene.LABEL_GAP + labelHeight) * unit
         val barsHeight = height - labelSpace
         val metrics = GlyphMetrics.Strip.scaled(unit)
 
@@ -73,7 +108,7 @@ class GlyphPainter(private val palette: GlyphPalette, private val unit: Float, l
                 canvas,
                 text,
                 index * (columnWidth + gap),
-                height - StripScene.LABEL_HEIGHT * unit / 2,
+                height - labelHeight * unit / 2,
                 strong = false,
                 align = Paint.Align.LEFT,
             )
@@ -104,7 +139,7 @@ class GlyphPainter(private val palette: GlyphPalette, private val unit: Float, l
         for ((cell, glyph) in scene.cells) {
             val left = scene.cellLeft(cell.column, width, unit)
             val top = scene.cellTop(cell.row, unit)
-            if (cell.isToday) {
+            if (cell.isToday && options.highlights) {
                 val radius = CalendarScene.BAND_RADIUS * unit
                 fillRoundRect(canvas, left, top, columnWidth, rowHeight, radius, Tone.BandToday)
             }
@@ -165,7 +200,7 @@ class GlyphPainter(private val palette: GlyphPalette, private val unit: Float, l
         val bottom = top + height
         when (glyph) {
             is Glyph.Dots -> {
-                val colors = glyph.swatches.map(palette::swatch).ifEmpty { listOf(palette.tone(Tone.Faint)) }
+                val colors = glyph.swatches.map(palette::swatch).ifEmpty { listOf(emptyMark(Tone.Faint)) }
                 drawStack(
                     canvas,
                     colors,
@@ -184,7 +219,7 @@ class GlyphPainter(private val palette: GlyphPalette, private val unit: Float, l
                     if (glyph.count > 0) {
                         List(glyph.count) { palette.tone(Tone.Ink) }
                     } else {
-                        listOf(palette.tone(Tone.Faint))
+                        listOf(emptyMark(Tone.Faint))
                     }
                 drawStack(
                     canvas,
@@ -207,6 +242,7 @@ class GlyphPainter(private val palette: GlyphPalette, private val unit: Float, l
                         val max = metrics.barMax.coerceAtMost(room)
                         metrics.barMin + glyph.fraction * (max - metrics.barMin) to Tone.Ink
                     } else {
+                        if (!options.emptyDays) return
                         metrics.barEmpty to Tone.Faint
                     }
                 fillRoundRect(
@@ -227,7 +263,7 @@ class GlyphPainter(private val palette: GlyphPalette, private val unit: Float, l
                     fill.color = color
                     canvas.drawCircle(centerX, centerY, metrics.check / 2, fill)
                 } else {
-                    val color = palette.tone(Tone.Ring) ?: return
+                    val color = emptyMark(Tone.Ring) ?: return
                     stroke.color = color
                     stroke.strokeWidth = metrics.checkStroke
                     canvas.drawCircle(centerX, centerY, (metrics.check - metrics.checkStroke) / 2, stroke)
@@ -265,6 +301,8 @@ class GlyphPainter(private val palette: GlyphPalette, private val unit: Float, l
         }
     }
 
+    private fun emptyMark(tone: Tone): Int? = if (options.emptyDays) palette.tone(tone) else null
+
     private fun drawBand(
         canvas: Canvas,
         day: DayColumn,
@@ -274,6 +312,7 @@ class GlyphPainter(private val palette: GlyphPalette, private val unit: Float, l
         height: Float,
         radius: Float,
     ) {
+        if (!options.highlights) return
         val tone =
             when {
                 day.isToday -> Tone.BandToday
@@ -309,19 +348,20 @@ class GlyphPainter(private val palette: GlyphPalette, private val unit: Float, l
         tone: Tone? = null,
     ) {
         val paint = if (strong) strongLabel else label
-        val color = palette.tone(tone ?: if (strong) Tone.Ink else Tone.Label) ?: return
+        val color = palette.labelTone(tone ?: if (strong) Tone.Ink else Tone.Label) ?: return
         paint.color = color
         paint.textAlign = align
         val baseline = centerY - (paint.ascent() + paint.descent()) / 2
         canvas.drawText(text, x, baseline, paint)
     }
 
-    private companion object {
+    companion object {
+        /** Label size in dp. */
         const val LABEL_SIZE = 10f
-        const val STRONG_WEIGHT = "'wght' 600"
-        const val MIX_GAP = 1f
+        private const val STRONG_WEIGHT = "'wght' 600"
+        private const val MIX_GAP = 1f
 
         /** Where a month cell's day number sits, measured from the cell's top. */
-        const val DAY_NUMBER_CENTER = 8f
+        private const val DAY_NUMBER_CENTER = 8f
     }
 }

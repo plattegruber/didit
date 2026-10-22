@@ -106,49 +106,11 @@ class WidgetLogicTest {
         }
     }
 
-    /** Monospaced: every character is 0.6 em wide, and a line is 1.2 em tall. */
-    private val mono =
-        object : TextMeasure {
-            override fun width(text: String, sizeSp: Float, face: Face) = text.length * sizeSp * 0.6f
-
-            override fun lineHeight(sizeSp: Float, face: Face) = sizeSp * 1.2f
-        }
-
     @Test
-    fun `labels break onto as few lines as fit`() {
+    fun `items break onto as few lines as fit`() {
         val lines = breakLines(listOf("home", "takeout", "out"), width = 70f, gap = 5f) { it.length * 6f }
         assertThat(lines).containsExactly(listOf("home"), listOf("takeout", "out")).inOrder()
         assertThat(breakLines(listOf("a", "b"), 72f, 5f) { 6f }).containsExactly(listOf("a", "b"))
-        assertThat(breakLines(emptyList(), 72f, 5f) { 6f }).isEmpty()
-    }
-
-    @Test
-    fun `a legend that fits keeps its full size`() {
-        val fit = fitLegend(listOf("home", "takeout", "out"), width = 72f, height = 30f, measure = mono)
-        assertThat(fit.sizeSp).isEqualTo(10f)
-        assertThat(fit.lines.flatten()).containsExactly("home", "takeout", "out").inOrder()
-    }
-
-    @Test
-    fun `a legend that would be clipped shrinks until every label shows`() {
-        // Two lines of four labels need 24dp at 10sp, more than the 22dp of room; at 9sp, 21.6dp.
-        val labels = listOf("home", "takeout", "out", "work")
-        val fit = fitLegend(labels, width = 72f, height = 22f, measure = mono)
-        assertThat(fit.sizeSp).isEqualTo(9f)
-        assertThat(fit.lines.flatten()).containsExactlyElementsIn(labels).inOrder()
-    }
-
-    @Test
-    fun `a label wider than the column shrinks it too`() {
-        val fit = fitLegend(listOf("twelve chars"), width = 70f, height = 40f, measure = mono)
-        assertThat(fit.sizeSp).isEqualTo(9f)
-    }
-
-    @Test
-    fun `when nothing fits, every label still shows at the smallest size`() {
-        val labels = listOf("breakfast", "lunch", "dinner", "snacks")
-        val fit = fitLegend(labels, width = 72f, height = 5f, measure = mono)
-        assertThat(fit.sizeSp).isEqualTo(8f)
-        assertThat(fit.lines.flatten()).containsExactlyElementsIn(labels).inOrder()
+        assertThat(breakLines(emptyList<String>(), 72f, 5f) { 6f }).isEmpty()
     }
 }

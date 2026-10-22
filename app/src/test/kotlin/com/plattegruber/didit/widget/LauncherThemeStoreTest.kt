@@ -7,13 +7,14 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -28,7 +29,11 @@ class LauncherThemeStoreTest {
     val folder = TemporaryFolder()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Anything the receiver's work throws, so a failure reports its cause rather than a timeout. */
+    private val failures = mutableListOf<Throwable>()
+    private val scope =
+        CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, error -> failures += error })
     private val store by lazy {
         val data = PreferenceDataStoreFactory.create(scope = scope) { folder.newFile("launcher_theme.preferences_pb") }
         LauncherThemeStore(context, data, scope)
@@ -60,7 +65,9 @@ class LauncherThemeStoreTest {
             arrayOf("0", "#FF8AB4F8", "#FFFFFFFF", "#FF1F1F23", "#FFE6E1E5"),
         )
 
-        val theme = withTimeout(TIMEOUT_MILLIS) { store.theme.first { !it.isEmpty } }
+        val theme =
+            withTimeoutOrNull(TIMEOUT_MILLIS) { store.theme.first { !it.isEmpty } }
+                ?: throw AssertionError("Nothing recorded", failures.firstOrNull())
         assertThat(theme.accent).isEqualTo(0xFF8AB4F8.toInt())
         assertThat(theme.text).isEqualTo(0xFFFFFFFF.toInt())
         assertThat(theme.surface).isEqualTo(0xFF1F1F23.toInt())
@@ -69,6 +76,7 @@ class LauncherThemeStoreTest {
     }
 
     private companion object {
-        const val TIMEOUT_MILLIS = 5_000L
+        // Generous: it shares the machine with lint and release builds in CI.
+        const val TIMEOUT_MILLIS = 20_000L
     }
 }

@@ -29,11 +29,20 @@ enum class Tone(val alpha: Float) {
 
 /**
  * The colours a drawing uses. A null colour means "leave this part out", which is how the widget
- * splits one scene into an ink mask (tinted by the launcher for the current theme) and an accent
- * layer whose colours never change.
+ * splits one scene into layers: glyphs and labels as separate masks (each tinted by the launcher,
+ * so they can follow the theme and differ from each other) and an accent layer whose colours never
+ * change.
  */
-class GlyphPalette private constructor(private val ink: Int?, private val drawAccents: Boolean) {
-    fun tone(tone: Tone): Int? = ink?.let { ColorUtils.setAlphaComponent(it, (tone.alpha * MAX_ALPHA).toInt()) }
+class GlyphPalette private constructor(
+    private val ink: Int?,
+    private val labels: Int?,
+    private val drawAccents: Boolean,
+) {
+    /** A glyph shape (dots, bars, rings, highlights) in [tone]. */
+    fun tone(tone: Tone): Int? = ink?.withTone(tone)
+
+    /** Weekday letters, date labels and day numbers in [tone]. */
+    fun labelTone(tone: Tone): Int? = labels?.withTone(tone)
 
     fun swatch(swatch: Swatch): Int? = when {
         swatch == Swatch.Ink -> ink
@@ -41,17 +50,22 @@ class GlyphPalette private constructor(private val ink: Int?, private val drawAc
         else -> null
     }
 
+    private fun Int.withTone(tone: Tone) = ColorUtils.setAlphaComponent(this, (tone.alpha * MAX_ALPHA).toInt())
+
     companion object {
         private const val MAX_ALPHA = 255
         private const val WHITE = 0xFFFFFFFF.toInt()
 
         /** Everything in its real colour, for drawing straight onto the screen. */
-        fun full(ink: Int): GlyphPalette = GlyphPalette(ink, drawAccents = true)
+        fun full(ink: Int): GlyphPalette = GlyphPalette(ink, ink, drawAccents = true)
 
-        /** Every ink-based shape in white at its tone's strength, ready to be tinted. */
-        val InkMask: GlyphPalette = GlyphPalette(WHITE, drawAccents = false)
+        /** Ink-based glyph shapes in white at their tone's strength, ready to be tinted. */
+        val GlyphMask: GlyphPalette = GlyphPalette(WHITE, null, drawAccents = false)
+
+        /** Labels in white at their tone's strength, ready to be tinted. */
+        val LabelMask: GlyphPalette = GlyphPalette(null, WHITE, drawAccents = false)
 
         /** Only the accent-coloured shapes. */
-        val AccentsOnly: GlyphPalette = GlyphPalette(null, drawAccents = true)
+        val AccentsOnly: GlyphPalette = GlyphPalette(null, null, drawAccents = true)
     }
 }

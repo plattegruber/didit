@@ -33,8 +33,18 @@ you read, how much coffee you drank, whether you walked. Every day becomes a mar
 - Tap a row to log today. *Done* habits toggle in one tap; the rest open a small log sheet.
 - **Card** or **clear** background. Clear sits on the wallpaper like the rest of Niagara. The ink follows the system
   theme, or can be pinned light or dark to suit your wallpaper.
+- **Colours**: Didit's own, **Match launcher** (Niagara's accent, text and surface colours, heard through the
+  broadcast it shares with Kustom; else the system's Material You colours), or hand-picked.
+- **Text**: seven fonts (or the phone's own), a separate face for small labels, and four sizes on top of the
+  system font size.
+- **Show or hide** every part: the word mark, dates, names, choice labels, totals, units, the mix bar, weekday
+  letters, highlights and empty-day marks. Days shown can be fixed or fitted to the width.
 
-Long-press the widget and choose *Reconfigure* (Android 12+) to change what it shows.
+The widget draws itself whole, text included, so it uses Didit's fonts and lays out exactly; it is tinted by the
+launcher, so it still follows dark mode without being redrawn. If the text needs more room than the widget has, the
+rows grow and the drawing shrinks to fit rather than clipping anything.
+
+Long-press the widget and choose *Reconfigure* (Android 12+) to change it; the settings show a live preview.
 
 ## Building
 
@@ -79,4 +89,6 @@ Turbine, Robolectric, Roborazzi; Spotless with ktlint and the Compose rules.
 
 ## Licences
 
-Geist and Geist Mono are licensed under the SIL Open Font License; see [`licenses/Geist-OFL.txt`](licenses/Geist-OFL.txt).
+Geist, Geist Mono, Inter, Space Grotesk, Manrope, Fraunces and JetBrains Mono are licensed under the SIL Open Font
+License; see [`licenses/`](licenses). The bundled copies are subset to Latin; other scripts fall back to the system's
+fonts.
