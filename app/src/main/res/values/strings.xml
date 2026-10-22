@@ -162,6 +162,12 @@
     <string name="widget_ink_auto">Auto</string>
     <string name="widget_ink_light">Light</string>
     <string name="widget_ink_dark">Dark</string>
+    <string name="widget_config_palette">Colours</string>
+    <string name="widget_palette_didit">Didit</string>
+    <string name="widget_palette_launcher">Match launcher</string>
+    <string name="widget_palette_heard">Niagara\'s colours, updated %1$s.</string>
+    <string name="widget_palette_waiting_system">Nothing from Niagara yet, so your system colours for now. Go to your home screen and back to share them.</string>
+    <string name="widget_palette_waiting_didit">Nothing from Niagara yet, so Didit\'s colours for now. Go to your home screen and back to share them.</string>
     <string name="widget_config_empty">You don\'t have any habits yet.</string>
     <string name="widget_config_open_app">Create one in Didit</string>
     <string name="widget_config_place">Done</string>

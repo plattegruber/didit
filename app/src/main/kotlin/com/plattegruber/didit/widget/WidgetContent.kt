@@ -3,6 +3,7 @@
 
 package com.plattegruber.didit.widget
 
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -21,6 +22,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
 import androidx.glance.color.ColorProvider as DayNightColorProvider
+import androidx.glance.color.DynamicThemeColorProviders
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -100,40 +102,75 @@ private object Layout {
     const val CALENDAR_ASPECT = 0.7f
 }
 
-/** The widget's colours: ink that follows the theme (or the user's pick), and its quieter shades. */
-class WidgetColors(config: WidgetConfig) {
+/**
+ * The widget's colours: ink that follows the theme (or the user's pick), its quieter shades, and
+ * the colour the glyphs are drawn in. With the launcher palette, text takes the launcher's text
+ * colour (its on-surface colour on a card), glyphs its accent, and the card its surface; each
+ * falls back to the system's Material You colours on Android 12+, then to Didit's own.
+ */
+class WidgetColors(
+    config: WidgetConfig,
+    launcher: LauncherTheme = LauncherTheme.None,
+    systemColors: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+) {
     /** Pale ink, for a dark theme or wallpaper. */
     private val paleInk = DarkDiditColors.ink
 
     /** Deep ink, for a light theme or wallpaper. */
     private val deepInk = LightDiditColors.ink
 
-    val ink: ColorProvider = provider(config.ink, Tone.Ink.alpha)
-    val subtle: ColorProvider = provider(config.ink, Tone.Label.alpha)
-    val background: ColorProvider? =
-        if (config.card) {
-            when (config.ink) {
-                WidgetConfig.Ink.Auto -> {
-                    DayNightColorProvider(
-                        day = LightDiditColors.surface,
-                        night = DarkDiditColors.surface,
-                    )
-                }
+    private val matchLauncher = config.palette == WidgetConfig.Palette.Launcher
 
-                WidgetConfig.Ink.Light -> {
-                    ColorProvider(DarkDiditColors.surface)
-                }
-
-                WidgetConfig.Ink.Dark -> {
-                    ColorProvider(LightDiditColors.surface)
-                }
-            }
+    /** The launcher's text colour, unless the user picked light or dark ink themselves. */
+    private val launcherText: Int? =
+        if (matchLauncher && config.ink == WidgetConfig.Ink.Auto) {
+            if (config.card) launcher.onSurface else launcher.text
         } else {
             null
         }
 
+    val ink: ColorProvider = launcherText?.let { fixed(it, Tone.Ink.alpha) } ?: provider(config.ink, Tone.Ink.alpha)
+    val subtle: ColorProvider =
+        launcherText?.let { fixed(it, Tone.Label.alpha) } ?: provider(config.ink, Tone.Label.alpha)
+
+    /** The dots, bars and tallies, and the quieter marks drawn with them. */
+    val glyph: ColorProvider =
+        when {
+            !matchLauncher -> ink
+            launcher.accent != null -> fixed(launcher.accent, 1f)
+            systemColors -> DynamicThemeColorProviders.primary
+            else -> ink
+        }
+
+    val background: ColorProvider? =
+        when {
+            !config.card -> null
+            matchLauncher && launcher.surface != null -> fixed(launcher.surface, 1f)
+            matchLauncher && systemColors -> DynamicThemeColorProviders.widgetBackground
+            else -> diditSurface(config.ink)
+        }
+
     fun swatch(swatch: Swatch): ColorProvider =
-        if (swatch == Swatch.Ink) ink else ColorProvider(Color(SwatchColors.argb(swatch)))
+        if (swatch == Swatch.Ink) glyph else ColorProvider(Color(SwatchColors.argb(swatch)))
+
+    private fun fixed(argb: Int, alpha: Float) = ColorProvider(Color(argb).copy(alpha = alpha))
+
+    private fun diditSurface(ink: WidgetConfig.Ink) = when (ink) {
+        WidgetConfig.Ink.Auto -> {
+            DayNightColorProvider(
+                day = LightDiditColors.surface,
+                night = DarkDiditColors.surface,
+            )
+        }
+
+        WidgetConfig.Ink.Light -> {
+            ColorProvider(DarkDiditColors.surface)
+        }
+
+        WidgetConfig.Ink.Dark -> {
+            ColorProvider(LightDiditColors.surface)
+        }
+    }
 
     private fun provider(ink: WidgetConfig.Ink, alpha: Float) = when (ink) {
         WidgetConfig.Ink.Auto -> {
@@ -154,8 +191,13 @@ class WidgetColors(config: WidgetConfig) {
 }
 
 @Composable
-fun WidgetContent(model: WidgetModel, config: WidgetConfig, actions: WidgetActions) {
-    val colors = remember(config) { WidgetColors(config) }
+fun WidgetContent(
+    model: WidgetModel,
+    config: WidgetConfig,
+    actions: WidgetActions,
+    launcher: LauncherTheme = LauncherTheme.None,
+) {
+    val colors = remember(config, launcher) { WidgetColors(config, launcher) }
     val padding = if (config.card) Layout.CardPadding else Layout.ClearPadding
     val background = colors.background
     val frame =
@@ -253,7 +295,7 @@ private fun AllHabits(
                 Spacer(GlanceModifier.width(Layout.ColumnGap))
                 LayerImage(
                     layers,
-                    colors.ink,
+                    colors.glyph,
                     stripWidth,
                     scene.height.dp,
                     context.resources.getQuantityString(R.plurals.home_rows_description, dayCount, dayCount),
@@ -347,7 +389,7 @@ private fun MixImage(summary: WindowSummary.Picks, colors: WidgetColors, width: 
                 drawMix(canvas, parts, w, h)
             }
         }
-    LayerImage(layers, colors.ink, width, Layout.MixHeight, contentDescription = null)
+    LayerImage(layers, colors.glyph, width, Layout.MixHeight, contentDescription = null)
 }
 
 @Composable
@@ -407,7 +449,7 @@ private fun OneHabitStrip(
         Spacer(GlanceModifier.height(Layout.HeaderGap))
         LayerImage(
             layers,
-            colors.ink,
+            colors.glyph,
             width,
             stripHeight,
             context.resources.getQuantityString(R.plurals.widget_history, dayCount, history.habit.name, dayCount),
@@ -475,7 +517,7 @@ private fun OneHabitCalendar(
         Spacer(GlanceModifier.height(CALENDAR_HEADER_GAP.dp))
         LayerImage(
             layers,
-            colors.ink,
+            colors.glyph,
             width,
             scene.height.dp,
             context.resources.getQuantityString(R.plurals.widget_history, dates.size, history.habit.name, dates.size),

@@ -92,7 +92,10 @@ class CreateAndLogFlowTest {
         compose.onNodeWithContentDescription("Add Out").performClick()
 
         awaitUntil { runBlocking { repository.observeEntries(habit.id).first().size == 2 } }
-        compose.onNodeWithContentDescription("Remove Out, number 2").assertIsDisplayed()
+        // The sheet redraws a beat after the write lands.
+        val secondPick = "Remove Out, number 2"
+        awaitUntil { compose.onAllNodesWithContentDescription(secondPick).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription(secondPick).assertIsDisplayed()
         val logged = runBlocking { repository.observeEntries(habit.id).first() }
         assertThat(logged.map { it.date }.toSet()).containsExactly(DesignSamples.TODAY)
         assertThat(logged.map { it.value }).containsExactly(

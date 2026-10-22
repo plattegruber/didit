@@ -42,6 +42,8 @@ interface WidgetEntryPoint {
     fun repository(): HabitRepository
 
     fun clock(): AppClock
+
+    fun launcherTheme(): LauncherThemeStore
 }
 
 internal fun Context.widgetEntryPoint(): WidgetEntryPoint =
@@ -65,7 +67,9 @@ class DiditWidget : GlanceAppWidget() {
                     WidgetModel.observe(entryPoint.repository(), config.target, today)
                 }
             val model by flow.collectAsState(WidgetModel.Loading)
-            WidgetContent(model, config, actions)
+            val launcherFlow = remember { entryPoint.launcherTheme().theme }
+            val launcher by launcherFlow.collectAsState(LauncherTheme.None)
+            WidgetContent(model, config, actions, launcher)
         }
     }
 }

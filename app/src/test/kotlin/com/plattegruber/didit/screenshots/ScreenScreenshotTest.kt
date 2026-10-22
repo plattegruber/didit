@@ -29,8 +29,13 @@ import com.plattegruber.didit.ui.log.LogActions
 import com.plattegruber.didit.ui.log.LogContent
 import com.plattegruber.didit.ui.log.LogTarget
 import com.plattegruber.didit.ui.theme.DiditTheme
+import com.plattegruber.didit.widget.LauncherTheme
+import com.plattegruber.didit.widget.WidgetConfig
+import com.plattegruber.didit.widget.WidgetConfigContent
+import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneOffset
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -209,5 +214,28 @@ class ScreenScreenshotTest {
             onNextMonth = {},
             onAddWidget = {},
         )
+    }
+
+    @Test
+    fun widgetConfigMatchLauncher() = capture {
+        WidgetConfigContent(
+            habits = DesignSamples.all.map { it.habit },
+            config = WidgetConfig(palette = WidgetConfig.Palette.Launcher),
+            launcher =
+                LauncherTheme(
+                    accent = 0xFF7FD1C7.toInt(),
+                    text = 0xFFFFFFFF.toInt(),
+                    surface = 0xFF22272B.toInt(),
+                    heardAt = NOW.minusSeconds(120),
+                ),
+            onChange = {},
+            onOpenApp = {},
+            onDone = {},
+            now = NOW,
+        )
+    }
+
+    private companion object {
+        val NOW: Instant = DesignSamples.TODAY.atTime(9, 0).toInstant(ZoneOffset.UTC)
     }
 }

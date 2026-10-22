@@ -27,7 +27,13 @@ class WidgetLogicTest {
 
     @Test
     fun `config survives a round trip through preferences`() {
-        val config = WidgetConfig(WidgetConfig.Target.OneHabit(HabitId(7)), card = true, ink = WidgetConfig.Ink.Dark)
+        val config =
+            WidgetConfig(
+                WidgetConfig.Target.OneHabit(HabitId(7)),
+                card = true,
+                ink = WidgetConfig.Ink.Dark,
+                palette = WidgetConfig.Palette.Launcher,
+            )
         val preferences = mutablePreferencesOf()
 
         config.writeTo(preferences)

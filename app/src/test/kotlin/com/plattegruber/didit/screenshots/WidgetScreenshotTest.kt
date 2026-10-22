@@ -21,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.plattegruber.didit.core.domain.model.Habit
 import com.plattegruber.didit.testing.DesignSamples
+import com.plattegruber.didit.widget.LauncherTheme
 import com.plattegruber.didit.widget.WidgetActions
 import com.plattegruber.didit.widget.WidgetConfig
 import com.plattegruber.didit.widget.WidgetContent
@@ -46,11 +47,24 @@ private object NoopActions : WidgetActions {
     override fun configure(): Action = actionRunCallback<NoopCallback>()
 }
 
-private class FixedWidget(private val model: WidgetModel, private val config: WidgetConfig) : GlanceAppWidget() {
+private class FixedWidget(
+    private val model: WidgetModel,
+    private val config: WidgetConfig,
+    private val launcher: LauncherTheme,
+) : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        provideContent { WidgetContent(model, config, NoopActions) }
+        provideContent { WidgetContent(model, config, NoopActions, launcher) }
     }
 }
+
+/** A Niagara theme with a hand-picked teal accent, as its Kustom broadcast would share it. */
+private val NiagaraTeal =
+    LauncherTheme(
+        accent = 0xFF7FD1C7.toInt(),
+        text = 0xFFFFFFFF.toInt(),
+        surface = 0xFF22272B.toInt(),
+        onSurface = 0xFFE4E9EC.toInt(),
+    )
 
 /**
  * The widget as the launcher would inflate it, over the design's ground. Ink is pinned to light:
@@ -63,8 +77,13 @@ private class FixedWidget(private val model: WidgetModel, private val config: Wi
 class WidgetScreenshotTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
-    private suspend fun render(model: WidgetModel, config: WidgetConfig, size: DpSize): Bitmap {
-        val views = FixedWidget(model, config).compose(context, size = size)
+    private suspend fun render(
+        model: WidgetModel,
+        config: WidgetConfig,
+        size: DpSize,
+        launcher: LauncherTheme = LauncherTheme.None,
+    ): Bitmap {
+        val views = FixedWidget(model, config, launcher).compose(context, size = size)
         val density = context.resources.displayMetrics.density
         val width = (size.width.value * density).toInt()
         val height = (size.height.value * density).toInt()
@@ -101,6 +120,26 @@ class WidgetScreenshotTest {
             WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
             WidgetConfig(ink = WidgetConfig.Ink.Light),
             DpSize(366.dp, 290.dp),
+        ).captureRoboImage()
+    }
+
+    @Test
+    fun matchLauncher() = runTest {
+        render(
+            WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
+            WidgetConfig(palette = WidgetConfig.Palette.Launcher),
+            DpSize(366.dp, 290.dp),
+            NiagaraTeal,
+        ).captureRoboImage()
+    }
+
+    @Test
+    fun matchLauncherCard() = runTest {
+        render(
+            WidgetModel.AllHabits(DesignSamples.all, DesignSamples.TODAY),
+            WidgetConfig(card = true, palette = WidgetConfig.Palette.Launcher),
+            DpSize(366.dp, 290.dp),
+            NiagaraTeal,
         ).captureRoboImage()
     }
 

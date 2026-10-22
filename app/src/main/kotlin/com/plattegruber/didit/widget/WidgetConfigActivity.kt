@@ -3,11 +3,14 @@ package com.plattegruber.didit.widget
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.text.format.DateUtils
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +23,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -31,6 +35,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
@@ -47,6 +52,7 @@ import com.plattegruber.didit.R
 import com.plattegruber.didit.core.domain.model.Habit
 import com.plattegruber.didit.core.domain.repository.HabitRepository
 import com.plattegruber.didit.ui.components.DashedButton
+import com.plattegruber.didit.ui.components.Dot
 import com.plattegruber.didit.ui.components.Overline
 import com.plattegruber.didit.ui.components.PrimaryButton
 import com.plattegruber.didit.ui.components.RadioMark
@@ -55,6 +61,7 @@ import com.plattegruber.didit.ui.theme.DiditTheme
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -67,6 +74,7 @@ class WidgetConfigViewModel
 constructor(
     savedState: SavedStateHandle,
     repository: HabitRepository,
+    launcherTheme: LauncherThemeStore,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
     val appWidgetId: Int = savedState[AppWidgetManager.EXTRA_APPWIDGET_ID] ?: AppWidgetManager.INVALID_APPWIDGET_ID
@@ -75,6 +83,13 @@ constructor(
         repository
             .observeHabits()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+
+    val launcher: StateFlow<LauncherTheme> =
+        launcherTheme.theme.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            LauncherTheme.None,
+        )
 
     var config by mutableStateOf(WidgetConfig())
         private set
@@ -124,9 +139,11 @@ class WidgetConfigActivity : ComponentActivity() {
         setContent {
             DiditTheme {
                 val habits by viewModel.habits.collectAsStateWithLifecycle()
+                val launcher by viewModel.launcher.collectAsStateWithLifecycle()
                 WidgetConfigContent(
                     habits = habits,
                     config = viewModel.config,
+                    launcher = launcher,
                     onChange = viewModel::update,
                     onOpenApp = { startActivity(MainActivity.home(this)) },
                     onDone = { viewModel.save(::finish) },
@@ -140,10 +157,12 @@ class WidgetConfigActivity : ComponentActivity() {
 fun WidgetConfigContent(
     habits: List<Habit>?,
     config: WidgetConfig,
+    launcher: LauncherTheme,
     onChange: ((WidgetConfig) -> WidgetConfig) -> Unit,
     onOpenApp: () -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
+    now: Instant = Instant.now(),
 ) {
     val colors = DiditTheme.colors
     Surface(modifier.fillMaxSize(), color = colors.background, contentColor = colors.ink) {
@@ -223,6 +242,25 @@ fun WidgetConfigContent(
                         }
                     }
                 }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Overline(stringResource(R.string.widget_config_palette))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        WidgetConfig.Palette.entries.forEach { palette ->
+                            val label =
+                                when (palette) {
+                                    WidgetConfig.Palette.Didit -> R.string.widget_palette_didit
+                                    WidgetConfig.Palette.Launcher -> R.string.widget_palette_launcher
+                                }
+                            TargetOption(
+                                label = stringResource(label),
+                                selected = config.palette == palette,
+                                onClick = { onChange { it.copy(palette = palette) } },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    if (config.palette == WidgetConfig.Palette.Launcher) LauncherStatus(launcher, now)
+                }
             }
             PrimaryButton(
                 text = stringResource(R.string.widget_config_place),
@@ -230,6 +268,39 @@ fun WidgetConfigContent(
                 modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 28.dp, top = 8.dp),
             )
         }
+    }
+}
+
+/** Whether Niagara's colours have reached Didit, and which they are. */
+@Composable
+private fun LauncherStatus(launcher: LauncherTheme, now: Instant, modifier: Modifier = Modifier) {
+    val heardAt = launcher.heardAt
+    val text =
+        when {
+            heardAt != null && !launcher.isEmpty -> {
+                val ago = DateUtils
+                    .getRelativeTimeSpanString(
+                        heardAt.toEpochMilli(),
+                        now.toEpochMilli(),
+                        DateUtils.MINUTE_IN_MILLIS,
+                    )
+                    .toString()
+                stringResource(R.string.widget_palette_heard, ago)
+            }
+
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                stringResource(R.string.widget_palette_waiting_system)
+            }
+
+            else -> {
+                stringResource(R.string.widget_palette_waiting_didit)
+            }
+        }
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        listOfNotNull(launcher.accent, launcher.text, launcher.surface).forEach { argb ->
+            Dot(Color(argb), 12.dp, Modifier.border(1.dp, DiditTheme.colors.lineStrong, CircleShape))
+        }
+        Text(text, style = DiditTheme.type.caption, color = DiditTheme.colors.muted, modifier = Modifier.weight(1f))
     }
 }
 

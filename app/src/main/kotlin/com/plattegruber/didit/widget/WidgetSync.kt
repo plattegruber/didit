@@ -29,10 +29,12 @@ class WidgetSync
 constructor(
     @param:ApplicationContext private val context: Context,
     private val repository: HabitRepository,
+    private val launcherTheme: LauncherThemeStore,
     @param:ApplicationScope private val scope: CoroutineScope,
 ) {
     @OptIn(FlowPreview::class)
     fun start() {
+        launcherTheme.listen()
         scope.launch {
             // Bursts of edits (stepping a total up five times) collapse into one redraw.
             repository.observeChanges().debounce(DEBOUNCE_MILLIS).collect { DiditWidget().updateAll(context) }
